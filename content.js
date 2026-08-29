@@ -1,33 +1,24 @@
 // WebSitter content script — runs on every page.
 
 const ELDERLY_STYLE_ID = "websitter-elderly-style";
+const DEFAULT_ELDERLY_ZOOM = 1.15;
 
-const ELDERLY_CSS = `
-  body.websitter-elderly {
-    font-size: 120% !important;
-    line-height: 1.6 !important;
-  }
-  body.websitter-elderly * {
-    letter-spacing: 0.01em;
-  }
-  body.websitter-elderly button,
-  body.websitter-elderly input[type="button"],
-  body.websitter-elderly input[type="submit"],
-  body.websitter-elderly a {
-    min-height: 44px !important;
-    min-width: 44px !important;
-    padding: 10px 16px !important;
-    font-size: 1.1em !important;
-  }
-  body.websitter-elderly input,
-  body.websitter-elderly select,
-  body.websitter-elderly textarea {
-    font-size: 1.1em !important;
-    padding: 8px !important;
-  }
-`;
+function elderlyCss(zoomLevel) {
+  return `
+    body.websitter-elderly {
+      zoom: ${zoomLevel};
+    }
+  `;
+}
 
-function applyElderlyMode(enabled) {
+function applyElderlyZoom(zoomLevel) {
+  const styleEl = document.getElementById(ELDERLY_STYLE_ID);
+  if (styleEl) {
+    styleEl.textContent = elderlyCss(zoomLevel || DEFAULT_ELDERLY_ZOOM);
+  }
+}
+
+function applyElderlyMode(enabled, zoomLevel) {
   document.body?.classList.toggle("websitter-elderly", enabled);
 
   let styleEl = document.getElementById(ELDERLY_STYLE_ID);
@@ -35,9 +26,9 @@ function applyElderlyMode(enabled) {
     if (!styleEl) {
       styleEl = document.createElement("style");
       styleEl.id = ELDERLY_STYLE_ID;
-      styleEl.textContent = ELDERLY_CSS;
       document.head?.appendChild(styleEl);
     }
+    styleEl.textContent = elderlyCss(zoomLevel || DEFAULT_ELDERLY_ZOOM);
     enableScamDetection();
     enableExplainOverlay();
   } else {
@@ -500,12 +491,12 @@ function disableExplainOverlay() {
 }
 
 function applyModes(settings) {
-  applyElderlyMode(Boolean(settings.elderlyMode));
+  applyElderlyMode(Boolean(settings.elderlyMode), settings.elderlyZoomLevel);
   applyKidSafeMode(Boolean(settings.kidSafeMode));
 }
 
 function init() {
-  chrome.storage.sync.get(["elderlyMode", "kidSafeMode"], (settings) => {
+  chrome.storage.sync.get(["elderlyMode", "kidSafeMode", "elderlyZoomLevel"], (settings) => {
     applyModes(settings);
   });
 }
@@ -519,7 +510,12 @@ if (document.body) {
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "sync") return;
   if ("elderlyMode" in changes) {
-    applyElderlyMode(Boolean(changes.elderlyMode.newValue));
+    chrome.storage.sync.get(["elderlyZoomLevel"], ({ elderlyZoomLevel }) => {
+      applyElderlyMode(Boolean(changes.elderlyMode.newValue), elderlyZoomLevel);
+    });
+  }
+  if ("elderlyZoomLevel" in changes) {
+    applyElderlyZoom(changes.elderlyZoomLevel.newValue);
   }
   if ("kidSafeMode" in changes) {
     applyKidSafeMode(Boolean(changes.kidSafeMode.newValue));

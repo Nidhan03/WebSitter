@@ -77,6 +77,32 @@ body {
   transform: translateX(22px);
 }
 
+.sub-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 20px 20px 44px;
+  margin: -8px 0 16px;
+}
+
+.sub-option label {
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.sub-option select {
+  font-size: 0.95rem;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.sub-option.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 .saved-note {
   color: #2e86de;
   font-weight: 600;

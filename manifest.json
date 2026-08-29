@@ -36,13 +36,13 @@
   "content_scripts": [
     {
       "matches": ["http://*/*", "https://*/*"],
-      "js": ["content.js"],
+      "js": ["lib/nsfwjs/nsfwjs.min.js", "content.js"],
       "run_at": "document_idle"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["data/*.json"],
+      "resources": ["data/*.json", "lib/nsfwjs/model/*"],
       "matches": ["<all_urls>"]
     }
   ]

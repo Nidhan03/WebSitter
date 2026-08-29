@@ -52,11 +52,96 @@ function applyKidSafeMode(enabled) {
   if (enabled) {
     enableLinkWarnings();
     enableCommentFiltering();
+    enableImageBlurring();
   } else {
     disableLinkWarnings();
     disableCommentFiltering();
+    disableImageBlurring();
   }
-  // Stage 7 will add image blurring here.
+}
+
+// --- Image blurring (Kid-Safe Mode, via NSFW.js) ---
+
+const NSFW_FLAGGED_CLASSES = ["Porn", "Hentai", "Sexy"];
+const NSFW_THRESHOLD = 0.7;
+const MIN_IMAGE_DIMENSION = 60;
+
+let nsfwModelPromise = null;
+let imageObserver = null;
+const scannedImages = new WeakSet();
+
+function getNsfwModel() {
+  if (typeof nsfwjs === "undefined") {
+    return Promise.reject(new Error("NSFW.js failed to load"));
+  }
+  if (!nsfwModelPromise) {
+    nsfwModelPromise = nsfwjs.load(chrome.runtime.getURL("lib/nsfwjs/model/"));
+  }
+  return nsfwModelPromise;
+}
+
+function blurImage(img) {
+  img.style.filter = "blur(20px)";
+  img.style.cursor = "pointer";
+  img.title = "Hidden potentially inappropriate image — click to reveal";
+  const reveal = () => {
+    img.style.filter = "";
+    img.removeEventListener("click", reveal);
+  };
+  img.addEventListener("click", reveal, { once: true });
+}
+
+async function classifyImage(img) {
+  if (scannedImages.has(img)) return;
+  scannedImages.add(img);
+
+  if (img.naturalWidth < MIN_IMAGE_DIMENSION || img.naturalHeight < MIN_IMAGE_DIMENSION) return;
+
+  try {
+    const model = await getNsfwModel();
+    const predictions = await model.classify(img);
+    const flagged = predictions.find(
+      (p) => NSFW_FLAGGED_CLASSES.includes(p.className) && p.probability >= NSFW_THRESHOLD
+    );
+    if (flagged) blurImage(img);
+  } catch {
+    // Cross-origin images without CORS headers can't be read by the model,
+    // and the model may fail to load — fail silently, don't break the page.
+  }
+}
+
+function observeImage(img) {
+  if (scannedImages.has(img) || !imageObserver) return;
+  if (img.complete && img.naturalWidth > 0) {
+    imageObserver.observe(img);
+  } else {
+    img.addEventListener("load", () => imageObserver?.observe(img), { once: true });
+  }
+}
+
+function scanExistingImages() {
+  document.querySelectorAll("img").forEach(observeImage);
+}
+
+function enableImageBlurring() {
+  if (imageObserver) return;
+  imageObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          imageObserver.unobserve(entry.target);
+          classifyImage(entry.target);
+        }
+      });
+    },
+    { rootMargin: "200px" }
+  );
+  scanExistingImages();
+}
+
+function disableImageBlurring() {
+  imageObserver?.disconnect();
+  imageObserver = null;
 }
 
 // --- Link warnings (Kid-Safe Mode) ---

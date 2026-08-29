@@ -9,3 +9,6 @@ config.js
 
 # Node (only relevant if any tooling gets added later)
 node_modules/
+
+# Chrome-generated when loading the extension unpacked
+_metadata/

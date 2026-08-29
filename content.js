@@ -75,7 +75,9 @@ function getNsfwModel() {
     return Promise.reject(new Error("NSFW.js failed to load"));
   }
   if (!nsfwModelPromise) {
-    nsfwModelPromise = nsfwjs.load(chrome.runtime.getURL("lib/nsfwjs/model/"));
+    // No argument = the bundled default MobileNetV2 model, embedded in
+    // nsfwjs.min.js itself. No network fetch, no separate model files.
+    nsfwModelPromise = nsfwjs.load();
   }
   return nsfwModelPromise;
 }

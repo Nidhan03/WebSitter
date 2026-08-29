@@ -12,7 +12,7 @@ const explanationCache = {};
 // Shared Groq chat-completions caller with retry-on-5xx, since Groq's
 // servers occasionally return a transient error. Not retried for 4xx
 // (bad key, bad model, rate limit) since retrying won't help those.
-async function callGroq(apiKey, prompt) {
+async function callGroq(apiKey, messages, { temperature } = {}) {
   const MAX_ATTEMPTS = 5;
   let response;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
@@ -24,7 +24,8 @@ async function callGroq(apiKey, prompt) {
       },
       body: JSON.stringify({
         model: GROQ_MODEL,
-        messages: [{ role: "user", content: prompt }],
+        messages,
+        ...(temperature !== undefined ? { temperature } : {}),
       }),
     });
 
@@ -57,7 +58,7 @@ async function explainButtonText(text) {
   }
 
   const prompt = `Explain in one short, plain-language sentence what clicking a button labeled "${text}" will do on a website. Assume the reader may be unfamiliar with tech jargon. Do not add extra caveats or formatting.`;
-  const explanation = await callGroq(apiKey, prompt);
+  const explanation = await callGroq(apiKey, [{ role: "user", content: prompt }]);
 
   explanationCache[text] = explanation;
   return explanation;
@@ -73,8 +74,31 @@ async function scoreComment(text) {
     throw new Error("Missing Groq moderation API key. Add it to config.js.");
   }
 
-  const prompt = `Rate how toxic, hateful, or harmful the following text is, on a scale from 0 (completely fine) to 1 (extremely toxic). Respond with ONLY the number (e.g. "0.1" or "0.85"), nothing else.\n\nText: "${text}"`;
-  const content = await callGroq(apiKey, prompt);
+  const systemPrompt = `You are a content moderation classifier. Score how toxic a piece of text is on a scale from 0.0 to 1.0.
+
+Toxic means: personal insults, harassment, name-calling, slurs, threats, or hateful language directed at a person or group.
+
+NOT toxic, even if negative: criticism, complaints, or negative opinions about a product, game, article, or idea (e.g. "this game is boring" or "I didn't like this update" score near 0.0) — these are not toxic unless they also contain a personal insult toward a person or group.
+
+Score calibration:
+- 0.0-0.2: Friendly, neutral, or plain negative/critical feedback with no insults.
+- 0.3-0.5: Mildly rude, dismissive, or sarcastic, but not a direct personal attack.
+- 0.6-0.8: A clear personal insult, name-calling, or demeaning language aimed at a person or group.
+- 0.9-1.0: Severe harassment, hate speech, slurs, or threats of violence.
+
+Respond with ONLY a decimal number between 0.0 and 1.0 (e.g. "0.1" or "0.85"). No words, no explanation, no punctuation other than the decimal point.`;
+
+  // temperature: 0 for deterministic scoring — without it, the same comment
+  // can get a different score on every scan (the model samples somewhat
+  // randomly by default), which made blurring look inconsistent/flaky.
+  const content = await callGroq(
+    apiKey,
+    [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: text },
+    ],
+    { temperature: 0 }
+  );
 
   const match = content.match(/[\d.]+/);
   const score = match ? parseFloat(match[0]) : NaN;

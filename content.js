@@ -18,7 +18,23 @@ function applyElderlyZoom(zoomLevel) {
   }
 }
 
+// Link warnings protect against scam/unsafe link destinations, which is
+// relevant to both modes — an elderly user clicking a "claim your prize"
+// link needs the same warning a kid clicking a random link does. So it's
+// enabled whenever *either* mode is on, not gated to just one.
+let elderlyModeEnabled = false;
+let kidSafeModeEnabled = false;
+
+function updateLinkWarnings() {
+  if (elderlyModeEnabled || kidSafeModeEnabled) {
+    enableLinkWarnings();
+  } else {
+    disableLinkWarnings();
+  }
+}
+
 function applyElderlyMode(enabled, zoomLevel) {
+  elderlyModeEnabled = enabled;
   document.body?.classList.toggle("websitter-elderly", enabled);
 
   let styleEl = document.getElementById(ELDERLY_STYLE_ID);
@@ -32,25 +48,28 @@ function applyElderlyMode(enabled, zoomLevel) {
     enableScamDetection();
     enableExplainOverlay();
     enableTextToSpeech();
+    enableAdPlaceholders();
   } else {
     styleEl?.remove();
     disableScamDetection();
     disableExplainOverlay();
     disableTextToSpeech();
+    disableAdPlaceholders();
   }
+  updateLinkWarnings();
 }
 
 function applyKidSafeMode(enabled) {
+  kidSafeModeEnabled = enabled;
   document.body?.classList.toggle("websitter-kidsafe", enabled);
   if (enabled) {
-    enableLinkWarnings();
     enableCommentFiltering();
     enableImageBlurring();
   } else {
-    disableLinkWarnings();
     disableCommentFiltering();
     disableImageBlurring();
   }
+  updateLinkWarnings();
 }
 
 // --- Image blurring (Kid-Safe Mode, via NSFW.js) ---
@@ -68,9 +87,13 @@ function getNsfwModel() {
     return Promise.reject(new Error("NSFW.js failed to load"));
   }
   if (!nsfwModelPromise) {
-    // No argument = the bundled default MobileNetV2 model, embedded in
-    // nsfwjs.min.js itself. No network fetch, no separate model files.
-    nsfwModelPromise = nsfwjs.load();
+    // nsfwjs.load()'s embedded-default-model path (calling it with no
+    // argument) is broken in this bundle — confirmed in real Chrome, not
+    // just a Node-environment quirk: it throws "Could not load the model.
+    // Make sure you are importing the model.min.js bundle." every time.
+    // Loading from an explicit URL takes a different, working code path —
+    // the standard tfjs load-from-hosted-files mechanism.
+    nsfwModelPromise = nsfwjs.load(chrome.runtime.getURL("lib/nsfwjs/model/"));
   }
   return nsfwModelPromise;
 }
@@ -90,18 +113,24 @@ async function classifyImage(img) {
   if (scannedImages.has(img)) return;
   scannedImages.add(img);
 
-  if (img.naturalWidth < MIN_IMAGE_DIMENSION || img.naturalHeight < MIN_IMAGE_DIMENSION) return;
+  if (img.naturalWidth < MIN_IMAGE_DIMENSION || img.naturalHeight < MIN_IMAGE_DIMENSION) {
+    console.debug("[WebSitter] skipped image (too small):", img.src);
+    return;
+  }
 
   try {
     const model = await getNsfwModel();
     const predictions = await model.classify(img);
+    console.debug("[WebSitter] NSFW predictions for", img.src, predictions);
     const flagged = predictions.find(
       (p) => NSFW_FLAGGED_CLASSES.includes(p.className) && p.probability >= NSFW_THRESHOLD
     );
     if (flagged) blurImage(img);
-  } catch {
+  } catch (err) {
     // Cross-origin images without CORS headers can't be read by the model,
-    // and the model may fail to load — fail silently, don't break the page.
+    // and the model may fail to load — fail silently in production, but log
+    // so this is diagnosable instead of a silent no-op.
+    console.warn("[WebSitter] NSFW classification failed for", img.src, err);
   }
 }
 
@@ -157,34 +186,41 @@ function isUnsafeHostname(hostname, domains) {
   return domains.some((domain) => hostname === domain || hostname.endsWith(`.${domain}`));
 }
 
-function showLinkWarningModal(url, onContinue) {
+function showLinkWarningModal(url) {
   const overlay = document.createElement("div");
   overlay.id = "websitter-link-warning";
   overlay.style.cssText = `
     position: fixed; inset: 0; z-index: 2147483647; background: rgba(0,0,0,0.5);
     display: flex; align-items: center; justify-content: center;
-    font-family: system-ui, sans-serif;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   `;
   overlay.innerHTML = `
-    <div style="background:#fff; border-radius:12px; padding:24px; max-width:360px; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.3);">
-      <p style="margin:0 0 8px; font-size:18px;">⚠️ Risky site ahead</p>
-      <p style="margin:0 0 20px; color:#555; word-break:break-word;">This link goes to <strong>${url}</strong>, which is on WebSitter's blocked list. Continue anyway?</p>
-      <div style="display:flex; gap:12px; justify-content:center;">
-        <button id="websitter-link-cancel" style="padding:10px 18px; border-radius:8px; border:1px solid #ccc; background:#fff; cursor:pointer; font-size:15px;">Go back</button>
-        <button id="websitter-link-continue" style="padding:10px 18px; border-radius:8px; border:none; background:#2e86de; color:#fff; cursor:pointer; font-size:15px;">Continue</button>
+    <div style="background:#fff; border-radius:16px; width:360px; max-width:calc(100vw - 40px); overflow:hidden; box-shadow:0 12px 32px rgba(0,0,0,0.25);">
+      <div style="height:4px; background:#d64545;"></div>
+      <div style="padding:28px 24px; text-align:center;">
+        <div style="width:44px; height:44px; margin:0 auto 14px; border-radius:50%; background:#fdeaea; display:flex; align-items:center; justify-content:center; font-size:20px;">🛡️</div>
+        <p style="margin:0 0 8px; font-size:17px; font-weight:700; color:#1a1a1a;">Blocked by WebSitter</p>
+        <p style="margin:0 0 22px; font-size:14px; color:#767676; line-height:1.5; word-break:break-word;">
+          <strong style="color:#1a1a1a;">${url}</strong> is on WebSitter's list of known-unsafe sites, so this link has been blocked.
+        </p>
+        <button id="websitter-link-dismiss" style="width:100%; padding:12px; border-radius:10px; border:none; background:#d64545; color:#fff; cursor:pointer; font-size:14px; font-weight:700; font-family:inherit;">Got it</button>
       </div>
     </div>
   `;
   document.body.appendChild(overlay);
 
-  overlay.querySelector("#websitter-link-cancel").addEventListener("click", () => overlay.remove());
-  overlay.querySelector("#websitter-link-continue").addEventListener("click", () => {
-    overlay.remove();
-    onContinue();
-  });
+  overlay.querySelector("#websitter-link-dismiss").addEventListener("click", () => overlay.remove());
 }
 
-async function handleLinkClick(e) {
+function navigateTo(anchor) {
+  if (anchor.target === "_blank") {
+    window.open(anchor.href, "_blank", "noopener");
+  } else {
+    window.location.href = anchor.href;
+  }
+}
+
+function handleLinkClick(e) {
   const anchor = e.target.closest("a[href]");
   if (!anchor) return;
 
@@ -196,13 +232,18 @@ async function handleLinkClick(e) {
   }
   if (url.protocol !== "http:" && url.protocol !== "https:") return;
 
-  const domains = await loadUnsafeDomains();
-  if (!isUnsafeHostname(url.hostname, domains)) return;
-
+  // Must preventDefault() synchronously, before the (async) domain check —
+  // by the time an `await` resolves, the browser has already navigated,
+  // which is exactly why the warning used to show up after the page loaded.
   e.preventDefault();
   e.stopPropagation();
-  showLinkWarningModal(url.hostname, () => {
-    window.location.href = anchor.href;
+
+  loadUnsafeDomains().then((domains) => {
+    if (!isUnsafeHostname(url.hostname, domains)) {
+      navigateTo(anchor);
+      return;
+    }
+    showLinkWarningModal(url.hostname);
   });
 }
 
@@ -310,6 +351,98 @@ function disableCommentFiltering() {
   clearInterval(commentBatchInterval);
   commentBatchInterval = null;
   scoredCommentIds = new WeakSet();
+}
+
+// --- Blocked-ad placeholders (Elderly Mode) ---
+//
+// declarativeNetRequest blocks ad/tracker *network requests*, which is
+// invisible if the page's own ad markup doesn't visually depend on that
+// request succeeding (e.g. a tracking pixel next to CSS-only ad content).
+// This adds real "cosmetic" blocking on top: known ad-container elements
+// that reference a blocked domain get swapped for a visible placeholder,
+// the same way a normal ad blocker's blocked slots look.
+
+const AD_CONTAINER_SELECTOR =
+  '.ad-slot, .advertisement, .ad-container, .ad-banner, .adsbygoogle, [id^="div-gpt-ad"], [data-ad-slot]';
+let adPlaceholderDomains = null;
+let adPlaceholderObserver = null;
+let adPlaceholderInterval = null;
+const scannedAdContainers = new WeakSet();
+
+async function loadAdPlaceholderDomains() {
+  if (adPlaceholderDomains) return adPlaceholderDomains;
+  const res = await fetch(chrome.runtime.getURL("data/adDomains.json"));
+  const bundled = await res.json();
+  const { customAdDomains } = await chrome.storage.sync.get(["customAdDomains"]);
+  adPlaceholderDomains = [...bundled, ...(customAdDomains || [])];
+  return adPlaceholderDomains;
+}
+
+function containerReferencesAdDomain(container, domains) {
+  const candidates = container.querySelectorAll("img[src], script[src], iframe[src]");
+  for (const el of candidates) {
+    try {
+      const hostname = new URL(el.src, window.location.href).hostname;
+      if (domains.some((domain) => hostname === domain || hostname.endsWith(`.${domain}`))) {
+        return true;
+      }
+    } catch {
+      // ignore unparseable URLs
+    }
+  }
+  return false;
+}
+
+function replaceWithAdPlaceholder(container) {
+  const rect = container.getBoundingClientRect();
+  const placeholder = document.createElement("div");
+  placeholder.className = "websitter-ad-placeholder";
+  placeholder.textContent = "🚫 Ad blocked by WebSitter";
+  placeholder.style.cssText = `
+    display: flex; align-items: center; justify-content: center;
+    min-height: ${Math.max(60, Math.round(rect.height))}px;
+    background: #f1f1f1; color: #888; font: 13px system-ui, sans-serif;
+    border: 1px dashed #ccc; border-radius: 6px; margin: ${getComputedStyle(container).margin};
+  `;
+  container.replaceWith(placeholder);
+}
+
+async function scanForAdPlaceholders() {
+  const containers = document.querySelectorAll(AD_CONTAINER_SELECTOR);
+  if (containers.length === 0) return;
+
+  const domains = await loadAdPlaceholderDomains();
+  containers.forEach((container) => {
+    if (scannedAdContainers.has(container)) return;
+    scannedAdContainers.add(container);
+    if (containerReferencesAdDomain(container, domains)) {
+      replaceWithAdPlaceholder(container);
+    }
+  });
+}
+
+function scheduleAdPlaceholderScan() {
+  scanForAdPlaceholders();
+}
+
+function enableAdPlaceholders() {
+  scheduleAdPlaceholderScan();
+  if (!adPlaceholderObserver) {
+    adPlaceholderObserver = new MutationObserver(scheduleAdPlaceholderScan);
+    adPlaceholderObserver.observe(document.body, { childList: true, subtree: true });
+  }
+  if (!adPlaceholderInterval) {
+    // Ad slots are often filled in asynchronously by third-party scripts
+    // after the initial page load, so keep checking periodically too.
+    adPlaceholderInterval = setInterval(scanForAdPlaceholders, 2000);
+  }
+}
+
+function disableAdPlaceholders() {
+  adPlaceholderObserver?.disconnect();
+  adPlaceholderObserver = null;
+  clearInterval(adPlaceholderInterval);
+  adPlaceholderInterval = null;
 }
 
 // --- Scam keyword detection (Elderly Mode) ---

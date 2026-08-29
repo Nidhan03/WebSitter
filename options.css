@@ -15,6 +15,23 @@
   --kidsafe-bg: rgba(107, 199, 154, 0.14);
 }
 
+:root[data-theme="light"] {
+  --bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --surface: #f0f0f0;
+  --border: #e0e0e0;
+  --ink: #333333;
+  --muted: #767676;
+  --shadow: rgba(0, 0, 0, 0.06);
+  --toast-bg: #333333;
+  --toast-text: #ffffff;
+
+  --elderly-color: #3d7fc9;
+  --elderly-bg: #eaf1fa;
+  --kidsafe-color: #2f9e6e;
+  --kidsafe-bg: #eaf6f0;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -38,69 +55,57 @@ body {
 .hero {
   position: relative;
   text-align: center;
-  overflow: hidden;
-  background:
-    radial-gradient(ellipse 80% 60% at 20% 0%, color-mix(in srgb, var(--elderly-color) 22%, transparent), transparent),
-    radial-gradient(ellipse 80% 60% at 80% 100%, color-mix(in srgb, var(--kidsafe-color) 22%, transparent), transparent),
-    var(--card-bg);
+  background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: 24px;
-  padding: 56px 24px 48px;
+  border-radius: 16px;
+  padding: 40px 24px 36px;
   margin-bottom: 24px;
-  box-shadow: 0 4px 20px var(--shadow);
-}
-
-.eyebrow {
-  display: inline-block;
-  margin: 0 0 18px;
-  padding: 5px 14px;
-  border-radius: 999px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  animation: eyebrow-bounce 2.4s ease-in-out infinite;
-}
-
-@keyframes eyebrow-bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
+  box-shadow: 0 1px 3px var(--shadow);
 }
 
 .hero-emoji {
-  font-size: 3rem;
+  font-size: 2.25rem;
   line-height: 1;
-  margin-bottom: 4px;
-  filter: drop-shadow(0 6px 16px color-mix(in srgb, var(--elderly-color) 40%, transparent));
+  margin-bottom: 10px;
 }
 
 .hero h1 {
-  margin: 8px 0 0;
+  margin: 0;
   font-family: "Fraunces", Georgia, serif;
-  font-size: 3.6rem;
+  font-size: 2.2rem;
   font-weight: 700;
   letter-spacing: -0.01em;
-  line-height: 1;
-}
-
-.hero h1 em {
-  font-style: italic;
-  font-weight: 600;
-  background: linear-gradient(100deg, var(--elderly-color), var(--kidsafe-color));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  line-height: 1.1;
+  color: var(--ink);
 }
 
 .tagline {
-  margin: 16px auto 0;
+  margin: 10px auto 0;
   color: var(--muted);
-  font-size: 1.05rem;
-  max-width: 440px;
-  line-height: 1.55;
+  font-size: 0.95rem;
+  max-width: 420px;
+  line-height: 1.5;
+}
+
+.theme-toggle {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.theme-toggle:hover {
+  border-color: var(--muted);
 }
 
 /* --- Mode cards --- */
@@ -416,34 +421,20 @@ body {
 .learn-more-btn {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
   color: var(--ink);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
   text-decoration: none;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 999px;
-  padding: 10px 18px 10px 22px;
-  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+  padding: 9px 20px;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .learn-more-btn:hover {
   border-color: var(--muted);
-  transform: translateY(2px);
-  box-shadow: 0 4px 14px var(--shadow);
-}
-
-.learn-more-arrow {
-  font-size: 1.3rem;
-  line-height: 1;
-  display: inline-block;
-  animation: learn-more-bob 1.6s ease-in-out infinite;
-}
-
-@keyframes learn-more-bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(4px); }
+  box-shadow: 0 2px 8px var(--shadow);
 }
 
 .footer-note {
@@ -480,22 +471,14 @@ body {
 
 .learn-more .lede {
   font-family: "Fraunces", Georgia, serif;
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   font-weight: 600;
+  font-style: italic;
   line-height: 1.4;
   color: var(--ink);
-  padding-left: 20px;
-  border-left: 3px solid;
-  border-image: linear-gradient(180deg, var(--elderly-color), var(--kidsafe-color)) 1;
+  padding-left: 18px;
+  border-left: 3px solid var(--border);
   margin: 0 0 24px;
-}
-
-.learn-more .lede em {
-  font-style: italic;
-  background: linear-gradient(100deg, var(--elderly-color), var(--kidsafe-color));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
 }
 
 .learn-more h3 {

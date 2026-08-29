@@ -11,9 +11,11 @@
 <body>
   <div class="page">
     <header class="hero">
-      <p class="eyebrow">Smart Web Protection</p>
+      <button type="button" id="themeToggle" class="theme-toggle" aria-label="Toggle dark/light theme">
+        <span id="themeToggleIcon">🌙</span>
+      </button>
       <div class="hero-emoji">🛡️</div>
-      <h1>Web<em>Sitter</em></h1>
+      <h1>WebSitter</h1>
       <p class="tagline">Protecting and simplifying the web for the people who need it most.</p>
     </header>
 
@@ -170,16 +172,13 @@
     <p class="footer-note">API keys live in <code>config.js</code> on your machine — never synced or sent anywhere except directly to Groq.</p>
 
     <div class="learn-more-link">
-      <a href="#learn-more" class="learn-more-btn">
-        <span>Learn more</span>
-        <span class="learn-more-arrow">↓</span>
-      </a>
+      <a href="#learn-more" class="learn-more-btn">Learn more</a>
     </div>
 
     <section class="learn-more" id="learn-more">
       <h2>About WebSitter</h2>
       <p class="lede">
-        The web wasn't built with everyone in mind — <em>WebSitter</em> is our attempt to fix that,
+        The web wasn't built with everyone in mind — WebSitter is our attempt to fix that,
         one page at a time.
       </p>
       <p>
@@ -244,9 +243,10 @@
       <h4>Risky link warnings</h4>
       <p>
         Before following a link, WebSitter checks its destination against a bundled blocklist
-        of known-unsafe domains, plus anything you've added yourself. If it matches, a
-        confirmation prompt appears before the browser navigates anywhere — a stray click never
-        silently lands somewhere it shouldn't.
+        of known-unsafe domains, plus anything you've added yourself. If it matches, the
+        navigation is blocked outright and a notice explains why — there's no "continue anyway"
+        option. This protection is active whenever Kid-Safe Mode or Elderly Mode is on, since
+        scam links (e.g. fake "claim your prize" pages) target both audiences.
       </p>
 
       <h4>Toxic text filtering</h4>

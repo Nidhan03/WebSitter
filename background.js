@@ -9,18 +9,10 @@ const GROQ_MODEL = "openai/gpt-oss-20b";
 // so this cache resets often. That's an accepted limitation, not a bug.
 const explanationCache = {};
 
-async function explainButtonText(text) {
-  if (explanationCache[text]) {
-    return explanationCache[text];
-  }
-
-  const apiKey = CONFIG.GROQ_API_KEY;
-  if (!apiKey) {
-    throw new Error("Missing Groq API key. Add it to config.js.");
-  }
-
-  const prompt = `Explain in one short, plain-language sentence what clicking a button labeled "${text}" will do on a website. Assume the reader may be unfamiliar with tech jargon. Do not add extra caveats or formatting.`;
-
+// Shared Groq chat-completions caller with retry-on-5xx, since Groq's
+// servers occasionally return a transient error. Not retried for 4xx
+// (bad key, bad model, rate limit) since retrying won't help those.
+async function callGroq(apiKey, prompt) {
   const MAX_ATTEMPTS = 5;
   let response;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
@@ -36,8 +28,6 @@ async function explainButtonText(text) {
       }),
     });
 
-    // Groq's servers occasionally return a transient 5xx; retry those, but
-    // not 4xx (bad key, bad model, rate limit) since retrying won't help.
     if (response.ok || response.status < 500 || attempt === MAX_ATTEMPTS) {
       break;
     }
@@ -49,10 +39,25 @@ async function explainButtonText(text) {
   }
 
   const data = await response.json();
-  const explanation = data.choices?.[0]?.message?.content?.trim();
-  if (!explanation) {
-    throw new Error("Groq API returned no explanation.");
+  const content = data.choices?.[0]?.message?.content?.trim();
+  if (!content) {
+    throw new Error("Groq API returned no content.");
   }
+  return content;
+}
+
+async function explainButtonText(text) {
+  if (explanationCache[text]) {
+    return explanationCache[text];
+  }
+
+  const apiKey = CONFIG.GROQ_API_KEY;
+  if (!apiKey) {
+    throw new Error("Missing Groq API key. Add it to config.js.");
+  }
+
+  const prompt = `Explain in one short, plain-language sentence what clicking a button labeled "${text}" will do on a website. Assume the reader may be unfamiliar with tech jargon. Do not add extra caveats or formatting.`;
+  const explanation = await callGroq(apiKey, prompt);
 
   explanationCache[text] = explanation;
   return explanation;
@@ -61,28 +66,19 @@ async function explainButtonText(text) {
 const MAX_COMMENTS_PER_REQUEST = 20;
 
 async function scoreComment(text) {
-  const apiKey = CONFIG.PERSPECTIVE_API_KEY;
+  // A separate Groq account/key from tap-to-explain, so the two features
+  // don't share (and potentially exhaust) the same free-tier quota.
+  const apiKey = CONFIG.GROQ_MODERATION_API_KEY;
   if (!apiKey) {
-    throw new Error("Missing Perspective API key. Add it to config.js.");
+    throw new Error("Missing Groq moderation API key. Add it to config.js.");
   }
 
-  const url = `https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze?key=${apiKey}`;
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      comment: { text },
-      languages: ["en"],
-      requestedAttributes: { TOXICITY: {} },
-    }),
-  });
+  const prompt = `Rate how toxic, hateful, or harmful the following text is, on a scale from 0 (completely fine) to 1 (extremely toxic). Respond with ONLY the number (e.g. "0.1" or "0.85"), nothing else.\n\nText: "${text}"`;
+  const content = await callGroq(apiKey, prompt);
 
-  if (!response.ok) {
-    throw new Error(`Perspective API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data.attributeScores?.TOXICITY?.summaryScore?.value ?? 0;
+  const match = content.match(/[\d.]+/);
+  const score = match ? parseFloat(match[0]) : NaN;
+  return Number.isFinite(score) ? Math.min(1, Math.max(0, score)) : 0;
 }
 
 async function scoreComments(comments) {
@@ -123,19 +119,51 @@ function setAdBlockingEnabled(enabled) {
   });
 }
 
+// User-added ad/tracker domains use dynamic rules (a separate mechanism
+// from the bundled static ruleset above) since they're only known at
+// runtime. IDs start well above the ~34 static rule IDs to avoid collision.
+const CUSTOM_AD_RULE_ID_BASE = 10000;
+const AD_RESOURCE_TYPES = [
+  "script", "image", "xmlhttprequest", "sub_frame",
+  "media", "font", "stylesheet", "ping", "other",
+];
+
+async function applyCustomAdRules(customDomains, enabled) {
+  const existing = await chrome.declarativeNetRequest.getDynamicRules();
+  const removeRuleIds = existing.map((r) => r.id);
+  const addRules = enabled
+    ? customDomains.map((domain, i) => ({
+        id: CUSTOM_AD_RULE_ID_BASE + i,
+        priority: 1,
+        action: { type: "block" },
+        condition: { urlFilter: `||${domain}^`, resourceTypes: AD_RESOURCE_TYPES },
+      }))
+    : [];
+  await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds, addRules });
+}
+
 chrome.action.onClicked.addListener(() => {
   chrome.runtime.openOptionsPage();
 });
 
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.sync.get(["elderlyMode"], (settings) => {
-    setAdBlockingEnabled(Boolean(settings.elderlyMode));
+  chrome.storage.sync.get(["elderlyMode", "customAdDomains"], (settings) => {
+    const enabled = Boolean(settings.elderlyMode);
+    setAdBlockingEnabled(enabled);
+    applyCustomAdRules(settings.customAdDomains || [], enabled);
   });
 });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "sync") return;
+
   if ("elderlyMode" in changes) {
     setAdBlockingEnabled(Boolean(changes.elderlyMode.newValue));
+  }
+
+  if ("elderlyMode" in changes || "customAdDomains" in changes) {
+    chrome.storage.sync.get(["elderlyMode", "customAdDomains"], (settings) => {
+      applyCustomAdRules(settings.customAdDomains || [], Boolean(settings.elderlyMode));
+    });
   }
 });

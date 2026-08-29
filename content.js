@@ -147,7 +147,9 @@ let linkClickHandler = null;
 async function loadUnsafeDomains() {
   if (unsafeDomains) return unsafeDomains;
   const res = await fetch(chrome.runtime.getURL("data/unsafeDomains.json"));
-  unsafeDomains = await res.json();
+  const bundled = await res.json();
+  const { customUnsafeDomains } = await chrome.storage.sync.get(["customUnsafeDomains"]);
+  unsafeDomains = [...bundled, ...(customUnsafeDomains || [])];
   return unsafeDomains;
 }
 
@@ -654,5 +656,8 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   }
   if ("kidSafeMode" in changes) {
     applyKidSafeMode(Boolean(changes.kidSafeMode.newValue));
+  }
+  if ("customUnsafeDomains" in changes) {
+    unsafeDomains = null; // force a re-fetch + re-merge on the next link click
   }
 });

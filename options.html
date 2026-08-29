@@ -6,51 +6,122 @@
   <link rel="stylesheet" href="options.css" />
 </head>
 <body>
-  <h1>WebSitter</h1>
-  <p class="intro">
-    Turn on the protections you need. Each mode works independently and
-    applies automatically on every site you visit.
-  </p>
+  <div class="page">
+    <header class="hero">
+      <img src="icon128.png" alt="" class="hero-icon" />
+      <div>
+        <h1>WebSitter</h1>
+        <p class="tagline">Protecting the people who need it most, on every site you visit.</p>
+      </div>
+    </header>
 
-  <section class="mode-card">
-    <div class="mode-info">
-      <h2>👴 Elderly Mode</h2>
-      <p>
-        Enlarges buttons and text, blocks ads, flags scam language, and
-        explains confusing buttons in plain language.
-      </p>
-    </div>
-    <label class="switch">
-      <input type="checkbox" id="elderlyModeToggle" />
-      <span class="slider"></span>
-    </label>
-  </section>
+    <p class="stats-strip" id="statsStrip" hidden>
+      <span id="statAds">–</span> ad domains blocked &middot;
+      <span id="statScam">–</span> scam phrases watched &middot;
+      <span id="statUnsafe">–</span> unsafe sites flagged
+    </p>
 
-  <section class="sub-option" id="elderlyZoomOption">
-    <label for="elderlyZoomSelect">Enlargement size</label>
-    <select id="elderlyZoomSelect">
-      <option value="1.1">Small</option>
-      <option value="1.15">Medium (default)</option>
-      <option value="1.3">Large</option>
-      <option value="1.5">Extra large</option>
-    </select>
-  </section>
+    <main>
+      <section class="mode-card theme-elderly">
+        <div class="mode-card-header">
+          <span class="mode-badge">👴</span>
+          <div class="mode-heading">
+            <h2>Elderly Mode</h2>
+            <p class="mode-tagline">Bigger, clearer, and harder to get scammed on.</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="elderlyModeToggle" />
+            <span class="slider"></span>
+          </label>
+        </div>
 
-  <section class="mode-card">
-    <div class="mode-info">
-      <h2>👶 Kid-Safe Mode</h2>
-      <p>
-        Blurs inappropriate images, warns before risky external links, and
-        filters toxic comments.
-      </p>
-    </div>
-    <label class="switch">
-      <input type="checkbox" id="kidSafeModeToggle" />
-      <span class="slider"></span>
-    </label>
-  </section>
+        <ul class="feature-list">
+          <li>
+            <span class="feature-icon">🔍</span>
+            <div>
+              <strong>Zoom everything, proportionally</strong>
+              <span>Text, buttons, icons, and images all scale up together, like zooming the whole page — nothing shrinks or gets left behind.</span>
+            </div>
+          </li>
+          <li>
+            <span class="feature-icon">🚫</span>
+            <div>
+              <strong>Ad &amp; tracker blocking</strong>
+              <span>Known ad and tracking domains are blocked at the network level before they ever load, using Chrome's built-in request filtering.</span>
+            </div>
+          </li>
+          <li>
+            <span class="feature-icon">⚠️</span>
+            <div>
+              <strong>Scam language detection</strong>
+              <span>Scans page text for urgency and scam phrases ("act now", "your account has been suspended") and shows a dismissible warning banner.</span>
+            </div>
+          </li>
+          <li>
+            <span class="feature-icon">💬</span>
+            <div>
+              <strong>Tap-to-explain</strong>
+              <span>Hover any button or link to reveal a "?" badge — click it for an instant, plain-language explanation of what it actually does, powered by Groq.</span>
+            </div>
+          </li>
+        </ul>
 
-  <p id="savedNote" class="saved-note" hidden>Saved</p>
+        <div class="sub-option" id="elderlyZoomOption">
+          <label for="elderlyZoomSelect">Enlargement size</label>
+          <select id="elderlyZoomSelect">
+            <option value="1.1">Small</option>
+            <option value="1.15">Medium (default)</option>
+            <option value="1.3">Large</option>
+            <option value="1.5">Extra large</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="mode-card theme-kidsafe">
+        <div class="mode-card-header">
+          <span class="mode-badge">👶</span>
+          <div class="mode-heading">
+            <h2>Kid-Safe Mode</h2>
+            <p class="mode-tagline">Filters what shouldn't reach a kid's screen.</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="kidSafeModeToggle" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <ul class="feature-list">
+          <li>
+            <span class="feature-icon">🖼️</span>
+            <div>
+              <strong>On-device image blurring</strong>
+              <span>Every image is scanned by an NSFW-detection model running entirely in your browser — nothing is uploaded, no API key needed. Flagged images blur automatically with click-to-reveal.</span>
+            </div>
+          </li>
+          <li>
+            <span class="feature-icon">🔗</span>
+            <div>
+              <strong>Risky link warnings</strong>
+              <span>Clicking a link to a known-unsafe domain shows a warning first, so a stray click doesn't land somewhere it shouldn't.</span>
+            </div>
+          </li>
+          <li>
+            <span class="feature-icon">🤬</span>
+            <div>
+              <strong>Toxic comment filtering</strong>
+              <span>Comments on the page are scored for toxicity via Google's Perspective API and blurred if flagged, with click-to-reveal.</span>
+            </div>
+          </li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="page-footer">
+      <p>API keys for tap-to-explain and comment filtering live in <code>config.js</code> on your machine — never synced or sent anywhere except directly to Groq / Google's Perspective API.</p>
+    </footer>
+  </div>
+
+  <div id="savedToast" class="saved-toast" hidden>✓ Saved</div>
 
   <script src="options.js"></script>
 </body>

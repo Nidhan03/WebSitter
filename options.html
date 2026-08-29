@@ -3,52 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <title>WebSitter Settings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="options.css" />
 </head>
 <body>
-  <div class="layout">
-    <aside class="sidebar">
-      <div class="sidebar-brand">
-        <img src="icon128.png" alt="" class="brand-icon" />
-        <div>
-          <h1>WebSitter</h1>
-          <p class="tagline">Safer browsing, automatically.</p>
-        </div>
-      </div>
+  <div class="page">
+    <header class="hero">
+      <p class="eyebrow">Smart Web Protection</p>
+      <div class="hero-emoji">🛡️</div>
+      <h1>Web<em>Sitter</em></h1>
+      <p class="tagline">Protecting and simplifying the web for the people who need it most.</p>
+    </header>
 
-      <nav class="sidebar-nav">
-        <a href="#elderly-mode" class="nav-link">
-          <span class="nav-emoji">👴</span> Elderly Mode
-        </a>
-        <a href="#kidsafe-mode" class="nav-link">
-          <span class="nav-emoji">👶</span> Kid-Safe Mode
-        </a>
-      </nav>
-
-      <div class="sidebar-stats" id="statsStrip" hidden>
-        <p class="sidebar-stats-title">Protecting you with</p>
-        <p><span id="statAds">–</span> ad domains blocked</p>
-        <p><span id="statScam">–</span> scam phrases watched</p>
-        <p><span id="statUnsafe">–</span> unsafe sites flagged</p>
-      </div>
-
-      <div class="sidebar-footer">
-        <button type="button" id="themeToggle" class="theme-toggle">
-          <span id="themeToggleIcon">🌙</span>
-          <span id="themeToggleLabel">Dark</span>
-        </button>
-        <p class="sidebar-note">API keys live in <code>config.js</code> on your machine — never synced or sent anywhere except directly to Groq / Google's Perspective API.</p>
-      </div>
-    </aside>
-
-    <main class="content">
-      <section class="mode-card theme-elderly" id="elderly-mode">
+    <div class="mode-grid">
+      <section class="mode-card theme-elderly">
         <div class="mode-card-header">
-          <span class="mode-badge">👴</span>
-          <div class="mode-heading">
-            <h2>Elderly Mode</h2>
-            <p class="mode-tagline">Bigger, clearer, and harder to get scammed on.</p>
-          </div>
+          <h2><span class="mode-emoji">👴</span> Elderly Mode</h2>
           <label class="switch">
             <input type="checkbox" id="elderlyModeToggle" />
             <span class="slider"></span>
@@ -57,60 +29,86 @@
 
         <ul class="feature-list">
           <li>
-            <span class="feature-icon">🔍</span>
-            <div>
-              <strong>Zoom everything, proportionally</strong>
-              <span>Text, buttons, icons, and images all scale up together, like zooming the whole page — nothing shrinks or gets left behind.</span>
-            </div>
+            <details class="feature-item">
+              <summary>
+                <span class="feature-check">✓</span>
+                <span class="feature-label">Bigger buttons &amp; text</span>
+                <span class="feature-chevron">▸</span>
+              </summary>
+              <div class="feature-detail">
+                <p>Text, buttons, icons, and images all scale up together, like zooming the whole page — nothing shrinks or gets left behind.</p>
+                <div class="field-row" id="elderlyZoomOption">
+                  <label for="elderlyZoomSelect">Enlargement size</label>
+                  <select id="elderlyZoomSelect">
+                    <option value="1.1">Small</option>
+                    <option value="1.15">Medium (default)</option>
+                    <option value="1.3">Large</option>
+                    <option value="1.5">Extra large</option>
+                  </select>
+                </div>
+              </div>
+            </details>
           </li>
+
           <li>
-            <span class="feature-icon">🚫</span>
-            <div>
-              <strong>Ad &amp; tracker blocking</strong>
-              <span>Known ad and tracking domains are blocked at the network level before they ever load, using Chrome's built-in request filtering.</span>
-            </div>
+            <details class="feature-item">
+              <summary>
+                <span class="feature-check">✓</span>
+                <span class="feature-label">Blocks ads</span>
+                <span class="feature-chevron">▸</span>
+              </summary>
+              <div class="feature-detail">
+                <p>Known ad and tracking domains are blocked at the network level before they ever load, using Chrome's built-in request filtering.</p>
+                <div class="field-block" id="customAdDomainsOption">
+                  <label for="customAdDomainInput">Block extra ad/tracker domains</label>
+                  <div class="custom-domain-input-row">
+                    <input type="text" id="customAdDomainInput" placeholder="e.g. ads.example.com" />
+                    <button type="button" id="addAdDomainBtn">Add</button>
+                  </div>
+                  <ul class="custom-domain-list" id="customAdDomainList"></ul>
+                </div>
+              </div>
+            </details>
           </li>
+
           <li>
-            <span class="feature-icon">⚠️</span>
-            <div>
-              <strong>Scam language detection</strong>
-              <span>Scans page text for urgency and scam phrases ("act now", "your account has been suspended") and shows a dismissible warning banner.</span>
-            </div>
+            <details class="feature-item">
+              <summary>
+                <span class="feature-check">✓</span>
+                <span class="feature-label">Flags scam language</span>
+                <span class="feature-chevron">▸</span>
+              </summary>
+              <div class="feature-detail">
+                <p>Scans page text for urgency and scam phrases like "act now" or "your account has been suspended," and shows a dismissible warning banner when found.</p>
+              </div>
+            </details>
           </li>
+
           <li>
-            <span class="feature-icon">💬</span>
-            <div>
-              <strong>Tap-to-explain</strong>
-              <span>Hover any button or link to reveal a "?" badge — click it for an instant, plain-language explanation of what it actually does, powered by Groq.</span>
-            </div>
-          </li>
-          <li>
-            <span class="feature-icon">🔊</span>
-            <div>
-              <strong>Text-to-speech</strong>
-              <span>Highlight any paragraph to get a "Listen" button that reads it aloud, using your browser's built-in speech synthesis — no network call.</span>
-            </div>
+            <details class="feature-item">
+              <summary>
+                <span class="feature-check">✓</span>
+                <span class="feature-label">Tap-to-explain buttons (+ read aloud)</span>
+                <span class="feature-chevron">▸</span>
+              </summary>
+              <div class="feature-detail">
+                <div class="icon-explainer">
+                  <span class="icon-chip">❓</span>
+                  <p>Hover any button or link to reveal this badge — click it for an instant, plain-language explanation of what it actually does, powered by Groq.</p>
+                </div>
+                <div class="icon-explainer">
+                  <span class="icon-chip listen-chip">🔊</span>
+                  <p>Highlight any paragraph on the page to get this "Listen" button — click it to have the text read aloud using your browser's built-in speech synthesis.</p>
+                </div>
+              </div>
+            </details>
           </li>
         </ul>
-
-        <div class="sub-option" id="elderlyZoomOption">
-          <label for="elderlyZoomSelect">Enlargement size</label>
-          <select id="elderlyZoomSelect">
-            <option value="1.1">Small</option>
-            <option value="1.15">Medium (default)</option>
-            <option value="1.3">Large</option>
-            <option value="1.5">Extra large</option>
-          </select>
-        </div>
       </section>
 
-      <section class="mode-card theme-kidsafe" id="kidsafe-mode">
+      <section class="mode-card theme-kidsafe">
         <div class="mode-card-header">
-          <span class="mode-badge">👶</span>
-          <div class="mode-heading">
-            <h2>Kid-Safe Mode</h2>
-            <p class="mode-tagline">Filters what shouldn't reach a kid's screen.</p>
-          </div>
+          <h2><span class="mode-emoji">👶</span> Kid-Safe Mode</h2>
           <label class="switch">
             <input type="checkbox" id="kidSafeModeToggle" />
             <span class="slider"></span>
@@ -119,29 +117,147 @@
 
         <ul class="feature-list">
           <li>
-            <span class="feature-icon">🖼️</span>
-            <div>
-              <strong>On-device image blurring</strong>
-              <span>Every image is scanned by an NSFW-detection model running entirely in your browser — nothing is uploaded, no API key needed. Flagged images blur automatically with click-to-reveal.</span>
-            </div>
+            <details class="feature-item">
+              <summary>
+                <span class="feature-check">✓</span>
+                <span class="feature-label">Blurs unsafe images (on-device ML)</span>
+                <span class="feature-chevron">▸</span>
+              </summary>
+              <div class="feature-detail">
+                <p>Every image is scanned by an NSFW-detection model running entirely in your browser — nothing is uploaded, no API key needed. Flagged images blur automatically with click-to-reveal.</p>
+              </div>
+            </details>
           </li>
+
           <li>
-            <span class="feature-icon">🔗</span>
-            <div>
-              <strong>Risky link warnings</strong>
-              <span>Clicking a link to a known-unsafe domain shows a warning first, so a stray click doesn't land somewhere it shouldn't.</span>
-            </div>
+            <details class="feature-item">
+              <summary>
+                <span class="feature-check">✓</span>
+                <span class="feature-label">Warns on risky links</span>
+                <span class="feature-chevron">▸</span>
+              </summary>
+              <div class="feature-detail">
+                <p>Clicking a link to a known-unsafe domain shows a warning first, so a stray click doesn't land somewhere it shouldn't.</p>
+                <div class="field-block" id="customUnsafeDomainsOption">
+                  <label for="customUnsafeDomainInput">Block extra unsafe sites</label>
+                  <div class="custom-domain-input-row">
+                    <input type="text" id="customUnsafeDomainInput" placeholder="e.g. risky-site.com" />
+                    <button type="button" id="addUnsafeDomainBtn">Add</button>
+                  </div>
+                  <ul class="custom-domain-list" id="customUnsafeDomainList"></ul>
+                </div>
+              </div>
+            </details>
           </li>
+
           <li>
-            <span class="feature-icon">🤬</span>
-            <div>
-              <strong>Toxic text filtering</strong>
-              <span>Comments, reviews, and general page text are scored for toxicity via Google's Perspective API and blurred if flagged, with click-to-reveal.</span>
-            </div>
+            <details class="feature-item">
+              <summary>
+                <span class="feature-check">✓</span>
+                <span class="feature-label">Filters toxic comments</span>
+                <span class="feature-chevron">▸</span>
+              </summary>
+              <div class="feature-detail">
+                <p>Comments, reviews, and general page text are scored for toxicity and blurred if flagged, with click-to-reveal.</p>
+              </div>
+            </details>
           </li>
         </ul>
       </section>
-    </main>
+    </div>
+
+
+    <p class="footer-note">API keys live in <code>config.js</code> on your machine — never synced or sent anywhere except directly to Groq.</p>
+
+    <div class="learn-more-link">
+      <a href="#learn-more" class="learn-more-btn">
+        <span>Learn more</span>
+        <span class="learn-more-arrow">↓</span>
+      </a>
+    </div>
+
+    <section class="learn-more" id="learn-more">
+      <h2>About WebSitter</h2>
+      <p class="lede">
+        The web wasn't built with everyone in mind — <em>WebSitter</em> is our attempt to fix that,
+        one page at a time.
+      </p>
+      <p>
+        It's a browser extension built for the people the web is often hardest on: elderly and
+        low-digital-literacy users navigating confusing pages and scam attempts, and kids who can
+        stumble into content or conversations they shouldn't. It offers two completely independent
+        modes, applied automatically the moment you visit any site — no per-site setup, no accounts,
+        nothing to remember to turn on. Everything runs either fully on-device or through minimal,
+        purpose-specific API calls, and your settings live in your own browser profile.
+      </p>
+
+      <h3>👴 Elderly Mode, in depth</h3>
+
+      <h4>Bigger buttons &amp; text</h4>
+      <p>
+        Rather than selectively resizing individual elements (which tends to break layouts or
+        leave some things, like inline images, awkwardly small) Elderly Mode applies a uniform
+        CSS zoom to the entire page — the same effect as zooming in a browser, but automatic
+        and adjustable from four preset levels (Small to Extra Large). Text, buttons, icons,
+        and images all scale together, so proportions and layout stay intact.
+      </p>
+
+      <h4>Ad &amp; tracker blocking</h4>
+      <p>
+        Known ad and tracking domains are blocked using Chrome's native
+        <code>declarativeNetRequest</code> API — requests are refused at the network level,
+        before they ever reach the page, rather than being hidden after the fact with CSS.
+        This is both faster and harder for a page to work around. You can add your own
+        domains to block on top of the bundled list, right from this settings page.
+      </p>
+
+      <h4>Scam language detection</h4>
+      <p>
+        WebSitter scans visible page text for common urgency and scam phrasing — things like
+        "act now," "your account has been suspended," or "you have won" — entirely client-side,
+        with no data leaving your browser. A dismissible warning banner appears the moment a
+        match is found, so you get a heads-up before entering any personal information.
+      </p>
+
+      <h4>Tap-to-explain &amp; read-aloud</h4>
+      <p>
+        A small <strong>❓</strong> badge appears when you hover any button or link. Clicking it
+        sends just that element's label to Groq's language model, which returns a one-sentence,
+        plain-language explanation of what it actually does — cached so the same button never
+        costs a repeat request. Separately, highlighting any paragraph reveals a
+        <strong>🔊 Listen</strong> button that reads the selected text aloud using your
+        browser's own built-in speech synthesis — no network call, no API key, completely free.
+      </p>
+
+      <h3>👶 Kid-Safe Mode, in depth</h3>
+
+      <h4>On-device image blurring</h4>
+      <p>
+        Every image on the page is classified by NSFW.js, a machine-learning model that runs
+        entirely inside your browser using the same MobileNetV2 architecture found in many
+        production content-moderation systems. No image is ever uploaded anywhere — the model
+        and its weights are bundled directly into the extension. To keep things fast,
+        classification only happens as images scroll into view, rather than scanning the
+        entire page up front. Anything flagged gets blurred immediately, with a click to reveal.
+      </p>
+
+      <h4>Risky link warnings</h4>
+      <p>
+        Before following a link, WebSitter checks its destination against a bundled blocklist
+        of known-unsafe domains, plus anything you've added yourself. If it matches, a
+        confirmation prompt appears before the browser navigates anywhere — a stray click never
+        silently lands somewhere it shouldn't.
+      </p>
+
+      <h4>Toxic text filtering</h4>
+      <p>
+        Comments, reviews, and general page text (paragraphs, list items — not just
+        comment-shaped elements) are batched and scored for toxicity via a dedicated Groq
+        account, kept separate from tap-to-explain so the two features never compete for the
+        same usage quota. Anything scoring above the toxicity threshold is blurred immediately,
+        with a click to reveal if you decide you want to see it anyway.
+      </p>
+    </section>
   </div>
 
   <div id="savedToast" class="saved-toast" hidden>✓ Saved</div>

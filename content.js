@@ -139,17 +139,17 @@ function disableImageBlurring() {
 
 // --- Link warnings (Kid-Safe Mode) ---
 
-let safeDomains = null;
+let unsafeDomains = null;
 let linkClickHandler = null;
 
-async function loadSafeDomains() {
-  if (safeDomains) return safeDomains;
-  const res = await fetch(chrome.runtime.getURL("data/safeDomains.json"));
-  safeDomains = await res.json();
-  return safeDomains;
+async function loadUnsafeDomains() {
+  if (unsafeDomains) return unsafeDomains;
+  const res = await fetch(chrome.runtime.getURL("data/unsafeDomains.json"));
+  unsafeDomains = await res.json();
+  return unsafeDomains;
 }
 
-function isSafeHostname(hostname, domains) {
+function isUnsafeHostname(hostname, domains) {
   return domains.some((domain) => hostname === domain || hostname.endsWith(`.${domain}`));
 }
 
@@ -163,8 +163,8 @@ function showLinkWarningModal(url, onContinue) {
   `;
   overlay.innerHTML = `
     <div style="background:#fff; border-radius:12px; padding:24px; max-width:360px; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.3);">
-      <p style="margin:0 0 8px; font-size:18px;">🔗 Leaving a safe site</p>
-      <p style="margin:0 0 20px; color:#555; word-break:break-word;">This link goes to <strong>${url}</strong>, which isn't on the approved list. Continue?</p>
+      <p style="margin:0 0 8px; font-size:18px;">⚠️ Risky site ahead</p>
+      <p style="margin:0 0 20px; color:#555; word-break:break-word;">This link goes to <strong>${url}</strong>, which is on WebSitter's blocked list. Continue anyway?</p>
       <div style="display:flex; gap:12px; justify-content:center;">
         <button id="websitter-link-cancel" style="padding:10px 18px; border-radius:8px; border:1px solid #ccc; background:#fff; cursor:pointer; font-size:15px;">Go back</button>
         <button id="websitter-link-continue" style="padding:10px 18px; border-radius:8px; border:none; background:#2e86de; color:#fff; cursor:pointer; font-size:15px;">Continue</button>
@@ -192,8 +192,8 @@ async function handleLinkClick(e) {
   }
   if (url.protocol !== "http:" && url.protocol !== "https:") return;
 
-  const domains = await loadSafeDomains();
-  if (isSafeHostname(url.hostname, domains)) return;
+  const domains = await loadUnsafeDomains();
+  if (!isUnsafeHostname(url.hostname, domains)) return;
 
   e.preventDefault();
   e.stopPropagation();

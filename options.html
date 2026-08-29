@@ -7,7 +7,41 @@
 </head>
 <body>
   <h1>WebSitter</h1>
-  <p>Options page scaffold — toggles wired up in Stage 2.</p>
+  <p class="intro">
+    Turn on the protections you need. Each mode works independently and
+    applies automatically on every site you visit.
+  </p>
+
+  <section class="mode-card">
+    <div class="mode-info">
+      <h2>👴 Elderly Mode</h2>
+      <p>
+        Enlarges buttons and text, blocks ads, flags scam language, and
+        explains confusing buttons in plain language.
+      </p>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="elderlyModeToggle" />
+      <span class="slider"></span>
+    </label>
+  </section>
+
+  <section class="mode-card">
+    <div class="mode-info">
+      <h2>👶 Kid-Safe Mode</h2>
+      <p>
+        Blurs inappropriate images, warns before risky external links, and
+        filters toxic comments.
+      </p>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="kidSafeModeToggle" />
+      <span class="slider"></span>
+    </label>
+  </section>
+
+  <p id="savedNote" class="saved-note" hidden>Saved</p>
+
   <script src="options.js"></script>
 </body>
 </html>

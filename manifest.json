@@ -10,6 +10,15 @@
   },
   "permissions": ["storage", "declarativeNetRequest", "activeTab", "scripting"],
   "host_permissions": ["<all_urls>"],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ad_rules",
+        "enabled": false,
+        "path": "rules/ad_block_rules.json"
+      }
+    ]
+  },
   "background": {
     "service_worker": "background.js"
   },
@@ -29,6 +38,12 @@
       "matches": ["http://*/*", "https://*/*"],
       "js": ["content.js"],
       "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["data/*.json"],
+      "matches": ["<all_urls>"]
     }
   ]
 }

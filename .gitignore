@@ -12,3 +12,6 @@ node_modules/
 
 # Chrome-generated when loading the extension unpacked
 _metadata/
+
+# Local manual test pages, not part of the extension
+test-pages/

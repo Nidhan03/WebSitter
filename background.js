@@ -3,7 +3,7 @@
 importScripts("config.js");
 
 const AD_RULESET_ID = "ad_rules";
-const GEMINI_MODEL = "gemini-2.0-flash";
+const GEMINI_MODEL = "gemini-3.6-flash";
 
 // In-memory only, per spec — MV3 service workers unload after ~30s idle,
 // so this cache resets often. That's an accepted limitation, not a bug.

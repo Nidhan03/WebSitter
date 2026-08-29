@@ -14,11 +14,12 @@ WebSitter is a browser extension that makes any website safer and easier to use 
 - Blocks known ad/tracker domains via `declarativeNetRequest`
 - Scans page text for common scam/urgency phrases and shows a dismissible warning banner
 - Tap-to-explain: hover any button/link to reveal a "?" badge; click it for a plain-language explanation powered by Groq
+- Text-to-speech: highlight any paragraph to get a "🔊 Listen" button that reads the selected text aloud, via the browser's built-in Web Speech API (no network call)
 
 **👶 Kid-Safe Mode**
 - Blurs images flagged as inappropriate, scanned entirely client-side via NSFW.js (no API key, lazy-loaded as images enter the viewport)
 - Warns before following links to domains on WebSitter's known-unsafe blocklist
-- Scores page comments for toxicity via the Perspective API and blurs anything flagged, with click-to-reveal
+- Scores page text for toxicity via the Perspective API and blurs anything flagged, with click-to-reveal — covers comments/reviews as well as general paragraphs and list items, not just comment-shaped elements
 
 ## Project structure
 

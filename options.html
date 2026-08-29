@@ -6,23 +6,43 @@
   <link rel="stylesheet" href="options.css" />
 </head>
 <body>
-  <div class="page">
-    <header class="hero">
-      <img src="icon128.png" alt="" class="hero-icon" />
-      <div>
-        <h1>WebSitter</h1>
-        <p class="tagline">Protecting the people who need it most, on every site you visit.</p>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <img src="icon128.png" alt="" class="brand-icon" />
+        <div>
+          <h1>WebSitter</h1>
+          <p class="tagline">Safer browsing, automatically.</p>
+        </div>
       </div>
-    </header>
 
-    <p class="stats-strip" id="statsStrip" hidden>
-      <span id="statAds">–</span> ad domains blocked &middot;
-      <span id="statScam">–</span> scam phrases watched &middot;
-      <span id="statUnsafe">–</span> unsafe sites flagged
-    </p>
+      <nav class="sidebar-nav">
+        <a href="#elderly-mode" class="nav-link">
+          <span class="nav-emoji">👴</span> Elderly Mode
+        </a>
+        <a href="#kidsafe-mode" class="nav-link">
+          <span class="nav-emoji">👶</span> Kid-Safe Mode
+        </a>
+      </nav>
 
-    <main>
-      <section class="mode-card theme-elderly">
+      <div class="sidebar-stats" id="statsStrip" hidden>
+        <p class="sidebar-stats-title">Protecting you with</p>
+        <p><span id="statAds">–</span> ad domains blocked</p>
+        <p><span id="statScam">–</span> scam phrases watched</p>
+        <p><span id="statUnsafe">–</span> unsafe sites flagged</p>
+      </div>
+
+      <div class="sidebar-footer">
+        <button type="button" id="themeToggle" class="theme-toggle">
+          <span id="themeToggleIcon">🌙</span>
+          <span id="themeToggleLabel">Dark</span>
+        </button>
+        <p class="sidebar-note">API keys live in <code>config.js</code> on your machine — never synced or sent anywhere except directly to Groq / Google's Perspective API.</p>
+      </div>
+    </aside>
+
+    <main class="content">
+      <section class="mode-card theme-elderly" id="elderly-mode">
         <div class="mode-card-header">
           <span class="mode-badge">👴</span>
           <div class="mode-heading">
@@ -64,6 +84,13 @@
               <span>Hover any button or link to reveal a "?" badge — click it for an instant, plain-language explanation of what it actually does, powered by Groq.</span>
             </div>
           </li>
+          <li>
+            <span class="feature-icon">🔊</span>
+            <div>
+              <strong>Text-to-speech</strong>
+              <span>Highlight any paragraph to get a "Listen" button that reads it aloud, using your browser's built-in speech synthesis — no network call.</span>
+            </div>
+          </li>
         </ul>
 
         <div class="sub-option" id="elderlyZoomOption">
@@ -77,7 +104,7 @@
         </div>
       </section>
 
-      <section class="mode-card theme-kidsafe">
+      <section class="mode-card theme-kidsafe" id="kidsafe-mode">
         <div class="mode-card-header">
           <span class="mode-badge">👶</span>
           <div class="mode-heading">
@@ -108,17 +135,13 @@
           <li>
             <span class="feature-icon">🤬</span>
             <div>
-              <strong>Toxic comment filtering</strong>
-              <span>Comments on the page are scored for toxicity via Google's Perspective API and blurred if flagged, with click-to-reveal.</span>
+              <strong>Toxic text filtering</strong>
+              <span>Comments, reviews, and general page text are scored for toxicity via Google's Perspective API and blurred if flagged, with click-to-reveal.</span>
             </div>
           </li>
         </ul>
       </section>
     </main>
-
-    <footer class="page-footer">
-      <p>API keys for tap-to-explain and comment filtering live in <code>config.js</code> on your machine — never synced or sent anywhere except directly to Groq / Google's Perspective API.</p>
-    </footer>
   </div>
 
   <div id="savedToast" class="saved-toast" hidden>✓ Saved</div>

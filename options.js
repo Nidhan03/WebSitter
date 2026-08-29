@@ -1,6 +1,27 @@
 // WebSitter options page logic — persists mode toggles to chrome.storage.sync.
 
 const DEFAULT_ELDERLY_ZOOM = "1.15";
+const DEFAULT_UI_THEME = "dark";
+
+const themeToggle = document.getElementById("themeToggle");
+const themeToggleIcon = document.getElementById("themeToggleIcon");
+const themeToggleLabel = document.getElementById("themeToggleLabel");
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  themeToggleIcon.textContent = theme === "dark" ? "🌙" : "☀️";
+  themeToggleLabel.textContent = theme === "dark" ? "Dark" : "Light";
+}
+
+chrome.storage.sync.get(["uiTheme"], (settings) => {
+  applyTheme(settings.uiTheme || DEFAULT_UI_THEME);
+});
+
+themeToggle.addEventListener("click", () => {
+  const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  applyTheme(next);
+  chrome.storage.sync.set({ uiTheme: next });
+});
 
 const elderlyToggle = document.getElementById("elderlyModeToggle");
 const kidSafeToggle = document.getElementById("kidSafeModeToggle");

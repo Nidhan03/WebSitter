@@ -31,10 +31,12 @@ function applyElderlyMode(enabled, zoomLevel) {
     styleEl.textContent = elderlyCss(zoomLevel || DEFAULT_ELDERLY_ZOOM);
     enableScamDetection();
     enableExplainOverlay();
+    enableTextToSpeech();
   } else {
     styleEl?.remove();
     disableScamDetection();
     disableExplainOverlay();
+    disableTextToSpeech();
   }
 }
 
@@ -218,19 +220,26 @@ function disableLinkWarnings() {
   document.getElementById("websitter-link-warning")?.remove();
 }
 
-// --- Comment filtering (Kid-Safe Mode) ---
+// --- Toxic text filtering (Kid-Safe Mode) — comments, reviews, and general
+// page text (paragraphs, list items, etc.), not just comment-shaped elements.
 
-const COMMENT_SELECTOR = '[class*="comment"], [class*="review"], [class*="reply"], [role="comment"]';
+const TEXT_SELECTOR =
+  '[class*="comment"], [class*="review"], [class*="reply"], [role="comment"], p, li, blockquote';
+const BATCH_SIZE = 20;
 let commentScanTimer = null;
 let commentObserver = null;
+let commentBatchInterval = null;
 let scoredCommentIds = new WeakSet();
 let commentIdCounter = 0;
 
 function findCandidateComments() {
-  const nodes = document.querySelectorAll(COMMENT_SELECTOR);
+  const nodes = document.querySelectorAll(TEXT_SELECTOR);
   const candidates = [];
   nodes.forEach((node) => {
     if (scoredCommentIds.has(node)) return;
+    // Skip a wrapper if one of its own descendants also matches — avoids
+    // sending the same text twice (e.g. a comment <div> and the <p> inside it).
+    if (node.querySelector(TEXT_SELECTOR)) return;
     const text = node.innerText?.trim();
     if (!text || text.length < 15 || text.length > 2000) return;
     node.dataset.websitterCommentId = String(commentIdCounter++);
@@ -251,9 +260,12 @@ function blurComment(node) {
 }
 
 async function scanForToxicComments() {
-  const candidates = findCandidateComments();
+  const candidates = findCandidateComments().slice(0, BATCH_SIZE);
   if (candidates.length === 0) return;
 
+  // Only mark the ones actually sent as scored — anything beyond the batch
+  // size stays a candidate so a later scan picks it up instead of being
+  // silently skipped forever.
   candidates.forEach(({ node }) => scoredCommentIds.add(node));
 
   chrome.runtime.sendMessage(
@@ -282,12 +294,19 @@ function enableCommentFiltering() {
     commentObserver = new MutationObserver(scheduleCommentScan);
     commentObserver.observe(document.body, { childList: true, subtree: true });
   }
+  if (!commentBatchInterval) {
+    // Mutation events alone won't re-trigger on a static page with more
+    // text than one batch — periodically work through the backlog too.
+    commentBatchInterval = setInterval(scanForToxicComments, 4000);
+  }
 }
 
 function disableCommentFiltering() {
   clearTimeout(commentScanTimer);
   commentObserver?.disconnect();
   commentObserver = null;
+  clearInterval(commentBatchInterval);
+  commentBatchInterval = null;
   scoredCommentIds = new WeakSet();
 }
 
@@ -480,6 +499,17 @@ function requestExplanation(el) {
 
 function handleExplainHover(e) {
   if (e.target.id === "websitter-explain-badge") return;
+
+  // Don't show the explain badge while the user is actively selecting text
+  // (e.g. dragging across a paragraph that happens to contain an inline
+  // link) — the Listen button takes priority for a text selection.
+  const selection = window.getSelection();
+  if (selection && !selection.isCollapsed) {
+    hideBadge();
+    explainTargetEl = null;
+    return;
+  }
+
   const target = e.target.closest(EXPLAIN_SELECTOR);
   if (!target) {
     hideBadge();
@@ -514,6 +544,85 @@ function disableExplainOverlay() {
   explainTooltip?.remove();
   explainTooltip = null;
   explainTargetEl = null;
+}
+
+// --- Text-to-speech on selection (Elderly Mode) ---
+
+let speechButton = null;
+let selectionChangeHandler = null;
+let selectionDebounceTimer = null;
+
+function getSpeechButton() {
+  if (speechButton) return speechButton;
+  speechButton = document.createElement("button");
+  speechButton.id = "websitter-speech-button";
+  speechButton.textContent = "🔊 Listen";
+  speechButton.style.cssText = `
+    position: fixed; z-index: 2147483647; display: none;
+    background: #f39c12; color: #fff; border: 2px solid #fff;
+    border-radius: 999px; padding: 8px 16px; font: bold 15px system-ui, sans-serif;
+    cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  `;
+  // Prevent the button click from collapsing the text selection first.
+  speechButton.addEventListener("mousedown", (e) => e.preventDefault());
+  speechButton.addEventListener("click", () => {
+    const text = speechButton.dataset.text;
+    if (!text) return;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+    hideSpeechButton();
+  });
+  document.documentElement.appendChild(speechButton);
+  return speechButton;
+}
+
+function hideSpeechButton() {
+  if (speechButton) speechButton.style.display = "none";
+}
+
+function handleSelectionChange() {
+  const selection = window.getSelection();
+  const text = selection?.toString().trim();
+  if (!text || text.length < 2 || selection.rangeCount === 0) {
+    hideSpeechButton();
+    return;
+  }
+
+  const rect = selection.getRangeAt(0).getBoundingClientRect();
+  if (rect.width === 0 && rect.height === 0) {
+    hideSpeechButton();
+    return;
+  }
+
+  // Don't show both floating badges at once — a text selection takes priority.
+  hideBadge();
+  hideTooltip();
+
+  const button = getSpeechButton();
+  button.dataset.text = text;
+  button.style.top = `${Math.max(8, rect.top - 44)}px`;
+  button.style.left = `${Math.max(8, rect.left)}px`;
+  button.style.display = "block";
+}
+
+function enableTextToSpeech() {
+  if (selectionChangeHandler) return;
+  selectionChangeHandler = () => {
+    clearTimeout(selectionDebounceTimer);
+    selectionDebounceTimer = setTimeout(handleSelectionChange, 150);
+  };
+  document.addEventListener("selectionchange", selectionChangeHandler);
+}
+
+function disableTextToSpeech() {
+  if (selectionChangeHandler) {
+    document.removeEventListener("selectionchange", selectionChangeHandler);
+    selectionChangeHandler = null;
+  }
+  clearTimeout(selectionDebounceTimer);
+  speechSynthesis.cancel();
+  speechButton?.remove();
+  speechButton = null;
 }
 
 function applyModes(settings) {

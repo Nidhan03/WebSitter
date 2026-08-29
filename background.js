@@ -1,5 +1,4 @@
 // WebSitter background service worker (MV3).
-// Stage 6 will add Perspective API calls for comment filtering.
 
 importScripts("config.js");
 
@@ -45,12 +44,61 @@ async function explainButtonText(text) {
   return explanation;
 }
 
+const MAX_COMMENTS_PER_REQUEST = 20;
+
+async function scoreComment(text) {
+  const apiKey = CONFIG.PERSPECTIVE_API_KEY;
+  if (!apiKey) {
+    throw new Error("Missing Perspective API key. Add it to config.js.");
+  }
+
+  const url = `https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze?key=${apiKey}`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      comment: { text },
+      languages: ["en"],
+      requestedAttributes: { TOXICITY: {} },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Perspective API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.attributeScores?.TOXICITY?.summaryScore?.value ?? 0;
+}
+
+async function scoreComments(comments) {
+  const limited = comments.slice(0, MAX_COMMENTS_PER_REQUEST);
+  const results = await Promise.all(
+    limited.map(async ({ id, text }) => {
+      try {
+        const toxicity = await scoreComment(text);
+        return { id, toxicity };
+      } catch (err) {
+        return { id, toxicity: 0, error: err.message };
+      }
+    })
+  );
+  return results;
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message?.type === "EXPLAIN_BUTTON") {
     explainButtonText(message.payload?.text ?? "")
       .then((explanation) => sendResponse({ ok: true, explanation }))
       .catch((err) => sendResponse({ ok: false, error: err.message }));
     return true; // keep the message channel open for the async response
+  }
+
+  if (message?.type === "SCORE_COMMENTS") {
+    scoreComments(message.payload?.comments ?? [])
+      .then((scores) => sendResponse({ ok: true, scores }))
+      .catch((err) => sendResponse({ ok: false, error: err.message }));
+    return true;
   }
 });
 

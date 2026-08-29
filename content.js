@@ -49,7 +49,168 @@ function applyElderlyMode(enabled) {
 
 function applyKidSafeMode(enabled) {
   document.body?.classList.toggle("websitter-kidsafe", enabled);
-  // Stages 6-7 will add link warnings, comment filtering, and image blurring here.
+  if (enabled) {
+    enableLinkWarnings();
+    enableCommentFiltering();
+  } else {
+    disableLinkWarnings();
+    disableCommentFiltering();
+  }
+  // Stage 7 will add image blurring here.
+}
+
+// --- Link warnings (Kid-Safe Mode) ---
+
+let safeDomains = null;
+let linkClickHandler = null;
+
+async function loadSafeDomains() {
+  if (safeDomains) return safeDomains;
+  const res = await fetch(chrome.runtime.getURL("data/safeDomains.json"));
+  safeDomains = await res.json();
+  return safeDomains;
+}
+
+function isSafeHostname(hostname, domains) {
+  return domains.some((domain) => hostname === domain || hostname.endsWith(`.${domain}`));
+}
+
+function showLinkWarningModal(url, onContinue) {
+  const overlay = document.createElement("div");
+  overlay.id = "websitter-link-warning";
+  overlay.style.cssText = `
+    position: fixed; inset: 0; z-index: 2147483647; background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    font-family: system-ui, sans-serif;
+  `;
+  overlay.innerHTML = `
+    <div style="background:#fff; border-radius:12px; padding:24px; max-width:360px; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+      <p style="margin:0 0 8px; font-size:18px;">🔗 Leaving a safe site</p>
+      <p style="margin:0 0 20px; color:#555; word-break:break-word;">This link goes to <strong>${url}</strong>, which isn't on the approved list. Continue?</p>
+      <div style="display:flex; gap:12px; justify-content:center;">
+        <button id="websitter-link-cancel" style="padding:10px 18px; border-radius:8px; border:1px solid #ccc; background:#fff; cursor:pointer; font-size:15px;">Go back</button>
+        <button id="websitter-link-continue" style="padding:10px 18px; border-radius:8px; border:none; background:#2e86de; color:#fff; cursor:pointer; font-size:15px;">Continue</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  overlay.querySelector("#websitter-link-cancel").addEventListener("click", () => overlay.remove());
+  overlay.querySelector("#websitter-link-continue").addEventListener("click", () => {
+    overlay.remove();
+    onContinue();
+  });
+}
+
+async function handleLinkClick(e) {
+  const anchor = e.target.closest("a[href]");
+  if (!anchor) return;
+
+  let url;
+  try {
+    url = new URL(anchor.href, window.location.href);
+  } catch {
+    return;
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") return;
+
+  const domains = await loadSafeDomains();
+  if (isSafeHostname(url.hostname, domains)) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+  showLinkWarningModal(url.hostname, () => {
+    window.location.href = anchor.href;
+  });
+}
+
+function enableLinkWarnings() {
+  if (linkClickHandler) return;
+  linkClickHandler = (e) => {
+    handleLinkClick(e);
+  };
+  document.addEventListener("click", linkClickHandler, true);
+}
+
+function disableLinkWarnings() {
+  if (linkClickHandler) {
+    document.removeEventListener("click", linkClickHandler, true);
+    linkClickHandler = null;
+  }
+  document.getElementById("websitter-link-warning")?.remove();
+}
+
+// --- Comment filtering (Kid-Safe Mode) ---
+
+const COMMENT_SELECTOR = '[class*="comment"], [class*="review"], [class*="reply"], [role="comment"]';
+let commentScanTimer = null;
+let commentObserver = null;
+let scoredCommentIds = new WeakSet();
+let commentIdCounter = 0;
+
+function findCandidateComments() {
+  const nodes = document.querySelectorAll(COMMENT_SELECTOR);
+  const candidates = [];
+  nodes.forEach((node) => {
+    if (scoredCommentIds.has(node)) return;
+    const text = node.innerText?.trim();
+    if (!text || text.length < 15 || text.length > 2000) return;
+    node.dataset.websitterCommentId = String(commentIdCounter++);
+    candidates.push({ id: node.dataset.websitterCommentId, text, node });
+  });
+  return candidates;
+}
+
+function blurComment(node) {
+  node.style.filter = "blur(6px)";
+  node.style.cursor = "pointer";
+  node.title = "Hidden potentially inappropriate comment — click to reveal";
+  const reveal = () => {
+    node.style.filter = "";
+    node.removeEventListener("click", reveal);
+  };
+  node.addEventListener("click", reveal, { once: true });
+}
+
+async function scanForToxicComments() {
+  const candidates = findCandidateComments();
+  if (candidates.length === 0) return;
+
+  candidates.forEach(({ node }) => scoredCommentIds.add(node));
+
+  chrome.runtime.sendMessage(
+    { type: "SCORE_COMMENTS", payload: { comments: candidates.map(({ id, text }) => ({ id, text })) } },
+    (response) => {
+      if (chrome.runtime.lastError || !response?.ok) return;
+      const nodeById = new Map(candidates.map(({ id, node }) => [id, node]));
+      response.scores.forEach(({ id, toxicity }) => {
+        if (toxicity >= 0.7) {
+          const node = nodeById.get(id);
+          if (node) blurComment(node);
+        }
+      });
+    }
+  );
+}
+
+function scheduleCommentScan() {
+  clearTimeout(commentScanTimer);
+  commentScanTimer = setTimeout(scanForToxicComments, 800);
+}
+
+function enableCommentFiltering() {
+  scheduleCommentScan();
+  if (!commentObserver) {
+    commentObserver = new MutationObserver(scheduleCommentScan);
+    commentObserver.observe(document.body, { childList: true, subtree: true });
+  }
+}
+
+function disableCommentFiltering() {
+  clearTimeout(commentScanTimer);
+  commentObserver?.disconnect();
+  commentObserver = null;
+  scoredCommentIds = new WeakSet();
 }
 
 // --- Scam keyword detection (Elderly Mode) ---

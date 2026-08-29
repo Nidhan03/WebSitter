@@ -1,8 +1,58 @@
 // WebSitter background service worker (MV3).
-// Stage 5-6 will add Gemini / Perspective API calls and the in-memory
-// explanationCache here.
+// Stage 6 will add Perspective API calls for comment filtering.
+
+importScripts("config.js");
 
 const AD_RULESET_ID = "ad_rules";
+const GEMINI_MODEL = "gemini-2.0-flash";
+
+// In-memory only, per spec — MV3 service workers unload after ~30s idle,
+// so this cache resets often. That's an accepted limitation, not a bug.
+const explanationCache = {};
+
+async function explainButtonText(text) {
+  if (explanationCache[text]) {
+    return explanationCache[text];
+  }
+
+  const apiKey = CONFIG.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Missing Gemini API key. Add it to config.js.");
+  }
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+  const prompt = `Explain in one short, plain-language sentence what clicking a button labeled "${text}" will do on a website. Assume the reader may be unfamiliar with tech jargon. Do not add extra caveats or formatting.`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Gemini API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const explanation = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+  if (!explanation) {
+    throw new Error("Gemini API returned no explanation.");
+  }
+
+  explanationCache[text] = explanation;
+  return explanation;
+}
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.type === "EXPLAIN_BUTTON") {
+    explainButtonText(message.payload?.text ?? "")
+      .then((explanation) => sendResponse({ ok: true, explanation }))
+      .catch((err) => sendResponse({ ok: false, error: err.message }));
+    return true; // keep the message channel open for the async response
+  }
+});
 
 function setAdBlockingEnabled(enabled) {
   chrome.declarativeNetRequest.updateEnabledRulesets({

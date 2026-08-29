@@ -3,7 +3,7 @@
 importScripts("config.js");
 
 const AD_RULESET_ID = "ad_rules";
-const GEMINI_MODEL = "gemini-3.6-flash";
+const GROQ_MODEL = "openai/gpt-oss-20b";
 
 // In-memory only, per spec — MV3 service workers unload after ~30s idle,
 // so this cache resets often. That's an accepted limitation, not a bug.
@@ -14,30 +14,44 @@ async function explainButtonText(text) {
     return explanationCache[text];
   }
 
-  const apiKey = CONFIG.GEMINI_API_KEY;
+  const apiKey = CONFIG.GROQ_API_KEY;
   if (!apiKey) {
-    throw new Error("Missing Gemini API key. Add it to config.js.");
+    throw new Error("Missing Groq API key. Add it to config.js.");
   }
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
   const prompt = `Explain in one short, plain-language sentence what clicking a button labeled "${text}" will do on a website. Assume the reader may be unfamiliar with tech jargon. Do not add extra caveats or formatting.`;
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-    }),
-  });
+  const MAX_ATTEMPTS = 5;
+  let response;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+
+    // Groq's servers occasionally return a transient 5xx; retry those, but
+    // not 4xx (bad key, bad model, rate limit) since retrying won't help.
+    if (response.ok || response.status < 500 || attempt === MAX_ATTEMPTS) {
+      break;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
+  }
 
   if (!response.ok) {
-    throw new Error(`Gemini API error: ${response.status}`);
+    throw new Error(`Groq API error: ${response.status}`);
   }
 
   const data = await response.json();
-  const explanation = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+  const explanation = data.choices?.[0]?.message?.content?.trim();
   if (!explanation) {
-    throw new Error("Gemini API returned no explanation.");
+    throw new Error("Groq API returned no explanation.");
   }
 
   explanationCache[text] = explanation;

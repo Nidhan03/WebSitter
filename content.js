@@ -383,26 +383,33 @@ function getExplainBadge() {
   explainBadge.textContent = "?";
   explainBadge.title = "Explain this";
   explainBadge.style.cssText = `
-    position: absolute; z-index: 2147483647; width: 22px; height: 22px;
-    border-radius: 50%; background: #2e86de; color: #fff; border: 2px solid #fff;
-    font: bold 13px system-ui, sans-serif; line-height: 1; cursor: pointer;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.4); padding: 0;
+    position: fixed; z-index: 2147483647; width: 40px; height: 40px;
+    border-radius: 50%; background: #2e86de; color: #fff; border: 3px solid #fff;
+    font: bold 22px system-ui, sans-serif; line-height: 1; cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4); padding: 0;
+    display: flex; align-items: center; justify-content: center;
   `;
   explainBadge.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
     if (explainTargetEl) requestExplanation(explainTargetEl);
   });
-  document.body.appendChild(explainBadge);
+  // Appended to <html>, not <body> — Elderly Mode applies `zoom` to body,
+  // and a descendant of a zoomed element gets its own absolute-positioned
+  // px offsets re-scaled by that zoom factor, throwing off our
+  // getBoundingClientRect()-based math. <html> itself is never zoomed.
+  document.documentElement.appendChild(explainBadge);
   return explainBadge;
 }
 
 function positionBadgeNear(el) {
   const rect = el.getBoundingClientRect();
   const badge = getExplainBadge();
-  badge.style.top = `${window.scrollY + rect.top - 10}px`;
-  badge.style.left = `${window.scrollX + rect.right - 10}px`;
-  badge.style.display = "block";
+  // position: fixed is viewport-relative, same as getBoundingClientRect(),
+  // so no scrollX/scrollY math needed here.
+  badge.style.top = `${rect.top - 20}px`;
+  badge.style.left = `${rect.right - 20}px`;
+  badge.style.display = "flex";
 }
 
 function hideBadge() {
@@ -414,12 +421,12 @@ function getExplainTooltip() {
   explainTooltip = document.createElement("div");
   explainTooltip.id = "websitter-explain-tooltip";
   explainTooltip.style.cssText = `
-    position: absolute; z-index: 2147483647; max-width: 280px;
-    background: #1a1a1a; color: #fff; font: 14px/1.4 system-ui, sans-serif;
-    padding: 10px 12px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+    position: fixed; z-index: 2147483647; max-width: 400px;
+    background: #1a1a1a; color: #fff; font: 18px/1.5 system-ui, sans-serif;
+    padding: 16px 20px; border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.4);
     display: none;
   `;
-  document.body.appendChild(explainTooltip);
+  document.documentElement.appendChild(explainTooltip);
   return explainTooltip;
 }
 
@@ -427,9 +434,28 @@ function showTooltipNear(el, text) {
   const rect = el.getBoundingClientRect();
   const tooltip = getExplainTooltip();
   tooltip.textContent = text;
+  // Render (invisibly) first so we can measure its real size before placing
+  // it — needed to know whether it'll fit below/right of the target.
+  tooltip.style.visibility = "hidden";
   tooltip.style.display = "block";
-  tooltip.style.top = `${window.scrollY + rect.bottom + 6}px`;
-  tooltip.style.left = `${window.scrollX + rect.left}px`;
+  const tooltipRect = tooltip.getBoundingClientRect();
+  const margin = 8;
+
+  let top = rect.bottom + 6;
+  if (top + tooltipRect.height > window.innerHeight - margin) {
+    top = rect.top - tooltipRect.height - 6; // flip above the target
+  }
+  top = Math.max(margin, top);
+
+  let left = rect.left;
+  if (left + tooltipRect.width > window.innerWidth - margin) {
+    left = window.innerWidth - tooltipRect.width - margin;
+  }
+  left = Math.max(margin, left);
+
+  tooltip.style.top = `${top}px`;
+  tooltip.style.left = `${left}px`;
+  tooltip.style.visibility = "visible";
 }
 
 function hideTooltip() {

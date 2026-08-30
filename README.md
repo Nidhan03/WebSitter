@@ -3,7 +3,15 @@ WebSitter is a browser extension that makes any website safer and easier to use 
 
 ## Development setup
 
-1. Copy `config.example.js` to `config.js` and fill in your two Groq API keys — `GROQ_API_KEY` for tap-to-explain and `GROQ_MODERATION_API_KEY` for toxicity scoring (a separate key/account so the two features don't share a free-tier quota). `config.js` is gitignored, never commit real keys.
+1. Copy `config.example.js` to `config.js` and fill in your Groq API key (used for both tap-to-explain and toxicity scoring). `config.js` is gitignored, never commit real keys. It should look like this:
+
+   ```js
+   // config.js
+   const CONFIG = {
+     GROQ_API_KEY: "gsk_your_key_here",
+   };
+   ```
+
 2. Open `chrome://extensions`, enable Developer mode, click "Load unpacked", and select this folder.
 3. Click the WebSitter toolbar icon to open the options page and toggle Elderly Mode / Kid-Safe Mode.
 
@@ -19,7 +27,7 @@ WebSitter is a browser extension that makes any website safer and easier to use 
 **👶 Kid-Safe Mode**
 - Blurs images flagged as inappropriate, scanned entirely client-side via NSFW.js (no API key, lazy-loaded as images enter the viewport)
 - Warns before following links to domains on WebSitter's known-unsafe blocklist, plus any sites you add yourself in the options page
-- Scores page text for toxicity via Groq (a separate key from tap-to-explain) and blurs anything flagged, with click-to-reveal — covers comments/reviews as well as general paragraphs and list items, not just comment-shaped elements
+- Scores page text for toxicity via Groq and blurs anything flagged, with click-to-reveal — covers comments/reviews as well as general paragraphs and list items, not just comment-shaped elements
 
 ## Project structure
 

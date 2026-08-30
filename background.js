@@ -67,11 +67,9 @@ async function explainButtonText(text) {
 const MAX_COMMENTS_PER_REQUEST = 20;
 
 async function scoreComment(text) {
-  // A separate Groq account/key from tap-to-explain, so the two features
-  // don't share (and potentially exhaust) the same free-tier quota.
-  const apiKey = CONFIG.GROQ_MODERATION_API_KEY;
+  const apiKey = CONFIG.GROQ_API_KEY;
   if (!apiKey) {
-    throw new Error("Missing Groq moderation API key. Add it to config.js.");
+    throw new Error("Missing Groq API key. Add it to config.js.");
   }
 
   const systemPrompt = `You are a content moderation classifier. Score how toxic a piece of text is on a scale from 0.0 to 1.0.

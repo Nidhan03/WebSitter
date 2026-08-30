@@ -2,5 +2,4 @@
 // config.js is gitignored — never commit real keys.
 const CONFIG = {
   GROQ_API_KEY: "",
-  GROQ_MODERATION_API_KEY: "",
 };

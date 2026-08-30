@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>WebSitter Settings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <button type="button" id="themeToggle" class="theme-toggle" aria-label="Toggle dark/light theme">
+        <span id="themeToggleIcon">🌙</span>
+      </button>
+      <div class="hero-emoji">🛡️</div>
+      <h1>WebSitter</h1>
+      <p class="tagline">Protecting and simplifying the web for the people who need it most.</p>
+    </header>
+
+    <div class="mode-grid">
+      <section class="mode-card theme-elderly">
+        <div class="mode-card-header">
+          <h2><span class="mode-emoji">👴</span> Elderly Mode</h2>
+          <label class="switch">
+            <input type="checkbox" id="elderlyModeToggle" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <ul class="feature-list">
+          <li>
+            <details class="feature-item">
+              <summary>
+                <span class="feature-check">✓</span>
+                <span class="feature-label">Bigger buttons &amp; text</span>
+                <span class="feature-chevron">▸</span>
+              </summary>
+              <div class="feature-detail">
+                <p>Text, buttons, icons, and images all scale up together, like zooming the whole page — nothing shrinks or gets left behind.</p>
+                <div class="field-row" id="elderlyZoomOption">
+                  <label for="elderlyZoomSelect">Enlargement size</label>
+                  <select id="elderlyZoomSelect">
+                    <option value="1.1">Small</option>
+                    <option value="1.15">Medium (default)</option>
+                    <option value="1.3">Large</option>
+                    <option value="1.5">Extra large</option>
+                  </select>
+                </div>
+              </div>
+            </details>
+          </li>
+
+          <li>
+            <details class="feature-item">
+              <summary>
+                <span class="feature-check">✓</span>
+                <span class="feature-label">Blocks ads</span>
+                <span class="feature-chevron">▸</span>
+              </summary>
+              <div class="feature-detail">
+                <p>Known ad and tracking domains are blocked at the network level before they ever load, using Chrome's built-in request filtering.</p>
+                <div class="field-block" id="customAdDomainsOption">
+                  <label for="customAdDomainInput">Block extra ad/tracker domains</label>
+                  <div class="custom-domain-input-row">
+                    <input type="text" id="customAdDomainInput" placeholder="e.g. ads.example.com" />
+                    <button type="button" id="addAdDomainBtn">Add</button>
+                  </div>
+                  <ul class="custom-domain-list" id="customAdDomainList"></ul>
+                </div>
+              </div>
+            </details>
+          </li>
+
+          <li>
+            <details class="feature-item">
+              <summary>
+                <span class="feature-check">✓</span>
+                <span class="feature-label">Flags scam language</span>
+                <span class="feature-chevron">▸</span>
+              </summary>
+              <div class="feature-detail">
+                <p>Scans page text for urgency and scam phrases like "act now" or "your account has been suspended," and shows a dismissible warning banner when found.</p>
+              </div>
+            </details>
+          </li>
+
+          <li>
+            <details class="feature-item">
+              <summary>
+                <span class="feature-check">✓</span>
+                <span class="feature-label">Tap-to-explain buttons (+ read aloud)</span>
+                <span class="feature-chevron">▸</span>
+              </summary>
+              <div class="feature-detail">
+                <div class="icon-explainer">
+                  <span class="icon-chip">❓</span>
+                  <p>Hover any button or link to reveal this badge — click it for an instant, plain-language explanation of what it actually does, powered by Groq.</p>
+                </div>
+                <div class="icon-explainer">
+                  <span class="icon-chip listen-chip">🔊</span>
+                  <p>Highlight any paragraph on the page to get this "Listen" button — click it to have the text read aloud using your browser's built-in speech synthesis.</p>
+                </div>
+              </div>
+            </details>
+          </li>
+        </ul>
+      </section>
+
+      <section class="mode-card theme-kidsafe">
+        <div class="mode-card-header">
+          <h2><span class="mode-emoji">👶</span> Kid-Safe Mode</h2>
+          <label class="switch">
+            <input type="checkbox" id="kidSafeModeToggle" />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <ul class="feature-list">
+          <li>
+            <details class="feature-item">
+              <summary>
+                <span class="feature-check">✓</span>
+                <span class="feature-label">Blurs unsafe images (on-device ML)</span>
+                <span class="feature-chevron">▸</span>
+              </summary>
+              <div class="feature-detail">
+                <p>Every image is scanned by an NSFW-detection model running entirely in your browser — nothing is uploaded, no API key needed. Flagged images blur automatically with click-to-reveal.</p>
+              </div>
+            </details>
+          </li>
+
+          <li>
+            <details class="feature-item">
+              <summary>
+                <span class="feature-check">✓</span>
+                <span class="feature-label">Warns on risky links</span>
+                <span class="feature-chevron">▸</span>
+              </summary>
+              <div class="feature-detail">
+                <p>Clicking a link to a known-unsafe domain shows a warning first, so a stray click doesn't land somewhere it shouldn't.</p>
+                <div class="field-block" id="customUnsafeDomainsOption">
+                  <label for="customUnsafeDomainInput">Block extra unsafe sites</label>
+                  <div class="custom-domain-input-row">
+                    <input type="text" id="customUnsafeDomainInput" placeholder="e.g. risky-site.com" />
+                    <button type="button" id="addUnsafeDomainBtn">Add</button>
+                  </div>
+                  <ul class="custom-domain-list" id="customUnsafeDomainList"></ul>
+                </div>
+              </div>
+            </details>
+          </li>
+
+          <li>
+            <details class="feature-item">
+              <summary>
+                <span class="feature-check">✓</span>
+                <span class="feature-label">Filters toxic comments</span>
+                <span class="feature-chevron">▸</span>
+              </summary>
+              <div class="feature-detail">
+                <p>Comments, reviews, and general page text are scored for toxicity and blurred if flagged, with click-to-reveal.</p>
+              </div>
+            </details>
+          </li>
+        </ul>
+      </section>
+    </div>
+
+
+    <div class="learn-more-link">
+      <button type="button" id="learnMoreBtn" class="learn-more-btn">Learn more</button>
+    </div>
+
+    <section class="learn-more" id="learn-more">
+      <h2>About WebSitter</h2>
+      <p class="lede">
+        The web wasn't built with everyone in mind — WebSitter is our attempt to fix that,
+        one page at a time.
+      </p>
+      <p>
+        It's a browser extension built for the people the web is often hardest on: elderly and
+        low-digital-literacy users navigating confusing pages and scam attempts, and kids who can
+        stumble into content or conversations they shouldn't. It offers two completely independent
+        modes, applied automatically the moment you visit any site — no per-site setup, no accounts,
+        nothing to remember to turn on. Everything runs either fully on-device or through minimal,
+        purpose-specific API calls, and your settings live in your own browser profile.
+      </p>
+
+      <h3>👴 Elderly Mode, in depth</h3>
+
+      <h4>Bigger buttons &amp; text</h4>
+      <p>
+        Rather than selectively resizing individual elements (which tends to break layouts or
+        leave some things, like inline images, awkwardly small) Elderly Mode applies a uniform
+        CSS zoom to the entire page — the same effect as zooming in a browser, but automatic
+        and adjustable from four preset levels (Small to Extra Large). Text, buttons, icons,
+        and images all scale together, so proportions and layout stay intact.
+      </p>
+
+      <h4>Ad &amp; tracker blocking</h4>
+      <p>
+        Known ad and tracking domains are blocked using Chrome's native
+        <code>declarativeNetRequest</code> API — requests are refused at the network level,
+        before they ever reach the page, rather than being hidden after the fact with CSS.
+        This is both faster and harder for a page to work around. You can add your own
+        domains to block on top of the bundled list, right from this settings page.
+      </p>
+
+      <h4>Scam language detection</h4>
+      <p>
+        WebSitter scans visible page text for common urgency and scam phrasing — things like
+        "act now," "your account has been suspended," or "you have won" — entirely client-side,
+        with no data leaving your browser. A dismissible warning banner appears the moment a
+        match is found, so you get a heads-up before entering any personal information.
+      </p>
+
+      <h4>Tap-to-explain &amp; read-aloud</h4>
+      <p>
+        A small <strong>❓</strong> badge appears when you hover any button or link. Clicking it
+        sends just that element's label to Groq's language model, which returns a one-sentence,
+        plain-language explanation of what it actually does — cached so the same button never
+        costs a repeat request. Separately, highlighting any paragraph reveals a
+        <strong>🔊 Listen</strong> button that reads the selected text aloud using your
+        browser's own built-in speech synthesis — no network call, no API key, completely free.
+      </p>
+
+      <h3>👶 Kid-Safe Mode, in depth</h3>
+
+      <h4>On-device image blurring</h4>
+      <p>
+        Every image on the page is classified by NSFW.js, a machine-learning model that runs
+        entirely inside your browser using the same MobileNetV2 architecture found in many
+        production content-moderation systems. No image is ever uploaded anywhere — the model
+        and its weights are bundled directly into the extension. To keep things fast,
+        classification only happens as images scroll into view, rather than scanning the
+        entire page up front. Anything flagged gets blurred immediately, with a click to reveal.
+      </p>
+
+      <h4>Risky link warnings</h4>
+      <p>
+        Before following a link, WebSitter checks its destination against a bundled blocklist
+        of known-unsafe domains, plus anything you've added yourself. If it matches, the
+        navigation is blocked outright and a notice explains why — there's no "continue anyway"
+        option. This protection is active whenever Kid-Safe Mode or Elderly Mode is on, since
+        scam links (e.g. fake "claim your prize" pages) target both audiences.
+      </p>
+
+      <h4>Toxic text filtering</h4>
+      <p>
+        Comments, reviews, and general page text (paragraphs, list items — not just
+        comment-shaped elements) are batched and scored for toxicity via a dedicated Groq
+        account, kept separate from tap-to-explain so the two features never compete for the
+        same usage quota. Anything scoring above the toxicity threshold is blurred immediately,
+        with a click to reveal if you decide you want to see it anyway.
+      </p>
+    </section>
+  </div>
+
+  <div id="savedToast" class="saved-toast" hidden>✓ Saved</div>
+
+  <script src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "WebSitter",
+  "version": "0.1.0",
+  "description": "Protects and simplifies the web for the people who need it most — Elderly Mode and Kid-Safe Mode.",
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "permissions": ["storage", "declarativeNetRequest"],
+  "host_permissions": ["<all_urls>"],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ad_rules",
+        "enabled": false,
+        "path": "rules/ad_block_rules.json"
+      }
+    ]
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*", "file:///*"],
+      "js": ["lib/nsfwjs/pre-shim.js", "lib/nsfwjs/nsfwjs.min.js", "content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["data/*.json", "lib/nsfwjs/model/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

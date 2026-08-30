@@ -195,15 +195,15 @@ function showLinkWarningModal(url) {
     font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   `;
   overlay.innerHTML = `
-    <div style="background:#fff; border-radius:16px; width:360px; max-width:calc(100vw - 40px); overflow:hidden; box-shadow:0 12px 32px rgba(0,0,0,0.25);">
-      <div style="height:4px; background:#d64545;"></div>
+    <div style="background:#262626; border:1px solid #3a3a3a; border-radius:18px; width:360px; max-width:calc(100vw - 40px); overflow:hidden; box-shadow:0 12px 32px rgba(0,0,0,0.5);">
+      <div style="height:4px; background:#e5484d;"></div>
       <div style="padding:28px 24px; text-align:center;">
-        <div style="width:44px; height:44px; margin:0 auto 14px; border-radius:50%; background:#fdeaea; display:flex; align-items:center; justify-content:center; font-size:20px;">🛡️</div>
-        <p style="margin:0 0 8px; font-size:17px; font-weight:700; color:#1a1a1a;">Blocked by WebSitter</p>
-        <p style="margin:0 0 22px; font-size:14px; color:#767676; line-height:1.5; word-break:break-word;">
-          <strong style="color:#1a1a1a;">${url}</strong> is on WebSitter's list of known-unsafe sites, so this link has been blocked.
+        <div style="width:44px; height:44px; margin:0 auto 14px; border-radius:50%; background:rgba(229,72,77,0.15); display:flex; align-items:center; justify-content:center; font-size:20px;">🛡️</div>
+        <p style="margin:0 0 8px; font-size:17px; font-weight:700; color:#f0f0f0;">Blocked by WebSitter</p>
+        <p style="margin:0 0 22px; font-size:14px; color:#a0a0a0; line-height:1.5; word-break:break-word;">
+          <strong style="color:#f0f0f0;">${url}</strong> is on WebSitter's list of known-unsafe sites, so this link has been blocked.
         </p>
-        <button id="websitter-link-dismiss" style="width:100%; padding:12px; border-radius:10px; border:none; background:#d64545; color:#fff; cursor:pointer; font-size:14px; font-weight:700; font-family:inherit;">Got it</button>
+        <button id="websitter-link-dismiss" style="width:100%; padding:12px; border-radius:10px; border:none; background:#0077b6; color:#fff; cursor:pointer; font-size:14px; font-weight:700; font-family:inherit;">Got it</button>
       </div>
     </div>
   `;
@@ -292,14 +292,11 @@ function findCandidateComments() {
 }
 
 function blurComment(node) {
+  // Permanently hidden — no click-to-reveal, so a curious click can't just
+  // bypass the filter and show the toxic text anyway.
   node.style.filter = "blur(6px)";
-  node.style.cursor = "pointer";
-  node.title = "Hidden potentially inappropriate comment — click to reveal";
-  const reveal = () => {
-    node.style.filter = "";
-    node.removeEventListener("click", reveal);
-  };
-  node.addEventListener("click", reveal, { once: true });
+  node.style.pointerEvents = "none";
+  node.title = "Hidden potentially inappropriate comment";
 }
 
 async function scanForToxicComments() {
@@ -401,8 +398,9 @@ function replaceWithAdPlaceholder(container) {
   placeholder.style.cssText = `
     display: flex; align-items: center; justify-content: center;
     min-height: ${Math.max(60, Math.round(rect.height))}px;
-    background: #f1f1f1; color: #888; font: 13px system-ui, sans-serif;
-    border: 1px dashed #ccc; border-radius: 6px; margin: ${getComputedStyle(container).margin};
+    background: #262626; color: #a0a0a0;
+    font: 13px "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    border: 1px dashed #3a3a3a; border-radius: 10px; margin: ${getComputedStyle(container).margin};
   `;
   container.replaceWith(placeholder);
 }
@@ -468,18 +466,21 @@ function showScamBanner(matchedKeyword) {
   banner.setAttribute("role", "alert");
   banner.style.cssText = `
     position: fixed; top: 0; left: 0; right: 0; z-index: 2147483647;
-    background: #b91c1c; color: #fff; font-family: system-ui, sans-serif;
+    background: #262626; color: #f0f0f0;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 15px; padding: 12px 16px; display: flex; align-items: center;
-    justify-content: space-between; gap: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    justify-content: space-between; gap: 16px;
+    border-bottom: 3px solid #e5484d; box-shadow: 0 2px 12px rgba(0,0,0,0.5);
   `;
   banner.innerHTML = `
-    <span>⚠️ This page contains language often used in scams ("${matchedKeyword}"). Be careful before entering personal information or payment details.</span>
+    <span><span style="color:#e5484d; font-weight:700;">⚠️ Scam warning:</span> This page contains language often used in scams ("${matchedKeyword}"). Be careful before entering personal information or payment details.</span>
   `;
   const dismissBtn = document.createElement("button");
   dismissBtn.textContent = "Dismiss";
   dismissBtn.style.cssText = `
-    background: #fff; color: #b91c1c; border: none; border-radius: 6px;
-    padding: 6px 12px; font-weight: 600; cursor: pointer; flex-shrink: 0;
+    background: transparent; color: #f0f0f0; border: 1px solid #3a3a3a; border-radius: 8px;
+    padding: 6px 14px; font-weight: 600; cursor: pointer; flex-shrink: 0;
+    font-family: inherit;
   `;
   dismissBtn.addEventListener("click", () => {
     banner.remove();

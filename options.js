@@ -21,6 +21,13 @@ themeToggle.addEventListener("click", () => {
   chrome.storage.sync.set({ uiTheme: next });
 });
 
+const learnMoreBtn = document.getElementById("learnMoreBtn");
+const learnMoreSection = document.getElementById("learn-more");
+
+learnMoreBtn.addEventListener("click", () => {
+  learnMoreSection.scrollIntoView({ behavior: "smooth" });
+});
+
 const elderlyToggle = document.getElementById("elderlyModeToggle");
 const kidSafeToggle = document.getElementById("kidSafeModeToggle");
 const elderlyZoomSelect = document.getElementById("elderlyZoomSelect");

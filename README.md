@@ -3,7 +3,7 @@ WebSitter is a browser extension that makes any website safer and easier to use 
 
 ## Development setup
 
-1. Copy `config.example.js` to `config.js` and fill in your Groq and Perspective API keys (`config.js` is gitignored, never commit real keys).
+1. Copy `config.example.js` to `config.js` and fill in your two Groq API keys — `GROQ_API_KEY` for tap-to-explain and `GROQ_MODERATION_API_KEY` for toxicity scoring (a separate key/account so the two features don't share a free-tier quota). `config.js` is gitignored, never commit real keys.
 2. Open `chrome://extensions`, enable Developer mode, click "Load unpacked", and select this folder.
 3. Click the WebSitter toolbar icon to open the options page and toggle Elderly Mode / Kid-Safe Mode.
 
@@ -11,21 +11,21 @@ WebSitter is a browser extension that makes any website safer and easier to use 
 
 **👴 Elderly Mode**
 - Enlarges buttons, links, and form fields to ~44px tap targets
-- Blocks known ad/tracker domains via `declarativeNetRequest`
+- Blocks known ad/tracker domains via `declarativeNetRequest`, plus any domains you add yourself in the options page
 - Scans page text for common scam/urgency phrases and shows a dismissible warning banner
 - Tap-to-explain: hover any button/link to reveal a "?" badge; click it for a plain-language explanation powered by Groq
 - Text-to-speech: highlight any paragraph to get a "🔊 Listen" button that reads the selected text aloud, via the browser's built-in Web Speech API (no network call)
 
 **👶 Kid-Safe Mode**
 - Blurs images flagged as inappropriate, scanned entirely client-side via NSFW.js (no API key, lazy-loaded as images enter the viewport)
-- Warns before following links to domains on WebSitter's known-unsafe blocklist
-- Scores page text for toxicity via the Perspective API and blurs anything flagged, with click-to-reveal — covers comments/reviews as well as general paragraphs and list items, not just comment-shaped elements
+- Warns before following links to domains on WebSitter's known-unsafe blocklist, plus any sites you add yourself in the options page
+- Scores page text for toxicity via Groq (a separate key from tap-to-explain) and blurs anything flagged, with click-to-reveal — covers comments/reviews as well as general paragraphs and list items, not just comment-shaped elements
 
 ## Project structure
 
 ```
 manifest.json          MV3 manifest
-background.js          Service worker: Groq + Perspective API calls, ad-block toggling
+background.js          Service worker: Groq API calls (explain + toxicity), ad-block toggling
 content.js             Injected on every page: mode detection and all on-page behavior
 options.html/js/css    Full-page settings UI (mode toggles)
 data/                  Ad domains, scam keywords, unsafe domain blocklist (bundled JSON)

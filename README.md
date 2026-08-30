@@ -54,9 +54,11 @@ lib/nsfwjs/            Vendored NSFW.js + MobileNetV2 model (client-side image c
 config.js              Your API keys (gitignored — copy from config.example.js)
 ```
 
-## Known limitations
+## Future modes
 
-- The `explanationCache` in `background.js` lives in memory only; MV3 service workers unload after ~30s idle, so cached explanations reset periodically. This is accepted by design, not a bug.
-- Comment and image scanning use best-effort heuristics (class-name patterns for comments, viewport-based lazy scanning for images) since there's no universal DOM contract across arbitrary sites.
-- Cross-origin images without CORS headers can't be read by the client-side NSFW model and are silently skipped rather than blurred.
-- The bundled `data/*.json` lists (ad domains, scam keywords, unsafe domains) are small starter sets, not exhaustive.
+WebSitter's two modes today are just the start. Planned/potential additions:
+
+- **🌐 Language Mode** — auto-translate or simplify page text for non-native speakers, on top of the plain-language explanations tap-to-explain already gives.
+- **👁️ Low-Vision Mode** — high-contrast color palettes, larger cursors, and screen-reader-friendly enhancements for users with limited vision.
+- **🎯 Focus Mode** — hides distracting elements (autoplay video, infinite-scroll feeds, popups) for users who find cluttered pages overwhelming.
+- **🖐️ Motor Accessibility Mode** — bigger click targets and reduced precision requirements for users with limited fine motor control.
